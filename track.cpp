@@ -31,11 +31,10 @@ Region::Region(int x1, int x2, int y1, int y2) : coords{x1,x2,y1,y2}{}
 
 //IMRPOVEMENT
 //use stream instead of writing to file
-//more accurate names
-void doc2png(string file_in, string file_out){
+void doc2png(string pdf, string png){
   InitializeMagick(NULL);  
-  Image pdf(file_in);
-  pdf.write(file_out);
+  Image img(pdf);
+  img.write(png);
 }
 
 //TODO

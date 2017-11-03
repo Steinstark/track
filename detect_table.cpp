@@ -5,7 +5,7 @@ using namespace std;
 using namespace cv;
 
 int main(){
-  string filename("out-1.png");
+  string filename("scan-hund.pdf-1_1.png");
   Mat src = imread(filename);
   if (!src.data)
     cerr << "Problem loading image. " << endl;
@@ -21,6 +21,6 @@ int main(){
   Mat bw;
   adaptiveThreshold(~gray, bw, 255, CV_ADAPTIVE_THRESH_MEAN_C,THRESH_BINARY, 15, -2);
   imshow("binary", bw);
-  cin.get();
+  waitKey(0);
   return 0;
 }

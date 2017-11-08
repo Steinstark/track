@@ -1,53 +1,29 @@
 #include <iostream>
 #include <vector>
-#include <Magick++.h> 
+//nclude <Magick++.h> 
 #include <string>
 #include <tesseract/baseapi.h>
 #include <leptonica/allheaders.h>
 
+
+#include "detect_table.hpp"
+#include "detect_cell.hpp"
+
 using namespace std;
-using namespace Magick;
 
-class Region{
-public:
-  int width();
-  int heigth();
-  int& operator[](int x){
-    return coords[x];
-  }
-  Region(int x1, int x2,int y1,int y2);
-private:
-  vector<int> coords;  
-};
-
-int Region::width(){
-  return coords[1]-coords[0];
-}
-
-int Region::heigth(){
-  return coords[3]-coords[2];
-}
-Region::Region(int x1, int x2, int y1, int y2) : coords{x1,x2,y1,y2}{}
-
+//TODO
+//unresolved conflict with opencv and imagemagick. Need solution
 //IMRPOVEMENT
 //use stream instead of writing to file
 void doc2png(string pdf, string png){
+  /*using namespace Magick;
   InitializeMagick(NULL);  
   Image img(pdf);
-  img.write(png);
-}
+  img.write(png);*/
+  return;
+}    
 
-//TODO
-//table detection implementation
-Region detect_table(){
-  return Region(113,153,76,92);
-}
-
-vector<Region> detect_cells(Region r){
-  return vector<Region>{r};
-}
-
-vector<string> identify_content(string path, vector<Region> rv){
+vector<string> identify_content(string path, vector<cv::Rect> rv){
   tesseract::TessBaseAPI *api = new tesseract::TessBaseAPI();
   if (api->Init(NULL, "eng")) {
     fprintf(stderr, "Could not initialize tesseract.\n");
@@ -56,8 +32,9 @@ vector<string> identify_content(string path, vector<Region> rv){
   Pix *image = pixRead(path.c_str());
   api->SetImage(image);
   vector<string> v;
-  for (Region r : rv){
-    api->SetRectangle(r[0],r[2], r.width(), r.heigth());
+  for (cv::Rect r : rv){
+    cv::Point p = r.tl();
+    api->SetRectangle(p.x, p.y, r.width, r.height);
     v.push_back(string(api->GetUTF8Text()));    
   }
   api->End();
@@ -67,24 +44,28 @@ vector<string> identify_content(string path, vector<Region> rv){
 
 //TODO
 //add RDF-logic
-vector<string> logic_layout(vector<Region> cells, vector<string> content){
+vector<string> logic_layout(vector<cv::Rect> cells, vector<string> content){
   return content;
 }
 
 int main(int argc, char** argv){
   if (argc != 3){
-    cout << "Invalid numnber of arguments" << endl;
+    cout << "Invalid number of arguments" << endl;
     return 0;
   }
   string pdf(argv[1]);
   string png(argv[2]);
   doc2png(pdf, png);
-  Region r = detect_table();
-  vector<Region> cells = detect_cells(r);
-  vector<string> content = identify_content(png, cells);
-  logic_layout(cells, content);
-  for (string s : content){
-    cout << s << endl;
+  vector<cv::Rect> tables = detect_tables(png);
+  for (cv::Rect r : tables){
+    //IMPROVEMENT
+    //Read image file once for all tables in it instead of once for every table
+    vector<cv::Rect> cells = detect_cells(png, r);
+    vector<string> content = identify_content(png, cells);
+    //logic_layout(cells, content);
+    for (string s : content){
+      cout << s << endl;
+    }
   }
   return 0;
 }

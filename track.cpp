@@ -23,7 +23,10 @@ void doc2png(string pdf, string png){
   return;
 }    
 
-vector<string> identify_content(string path, vector<cv::Rect> rv){
+//IMPROVEMENT
+//Inefficient to load image for every table (if multiple tables on the same page)
+
+vector<string> identify_content(string path, cv::Rect table, vector<cv::Rect> rv){
   tesseract::TessBaseAPI *api = new tesseract::TessBaseAPI();
   if (api->Init(NULL, "eng")) {
     fprintf(stderr, "Could not initialize tesseract.\n");
@@ -31,10 +34,11 @@ vector<string> identify_content(string path, vector<cv::Rect> rv){
   }
   Pix *image = pixRead(path.c_str());
   api->SetImage(image);
+  cv::Point pt = table.tl();
   vector<string> v;
   for (cv::Rect r : rv){
-    cv::Point p = r.tl();
-    api->SetRectangle(p.x, p.y, r.width, r.height);
+    cv::Point pc = r.tl();
+    api->SetRectangle(pt.x+pc.x, pt.y+pc.y, r.width, r.height);
     v.push_back(string(api->GetUTF8Text()));    
   }
   api->End();
@@ -57,11 +61,11 @@ int main(int argc, char** argv){
   string png(argv[2]);
   doc2png(pdf, png);
   vector<cv::Rect> tables = detect_tables(png);
-  for (cv::Rect r : tables){
+  for (cv::Rect table : tables){
     //IMPROVEMENT
     //Read image file once for all tables in it instead of once for every table
-    vector<cv::Rect> cells = detect_cells(png, r);
-    vector<string> content = identify_content(png, cells);
+    vector<cv::Rect> cells = detect_cells(png, table);
+    vector<string> content = identify_content(png,table, cells);
     //logic_layout(cells, content);
     for (string s : content){
       cout << s << endl;

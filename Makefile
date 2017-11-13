@@ -12,9 +12,6 @@ detect_cell_2: detect_cell_2.cpp
 detect_cell_exp: detect_cell_exp.cpp
 	g++ -g -std=c++11 detect_cell_exp.cpp -o detect_cell_exp `pkg-config --cflags --libs opencv`
 	./detect_cell_exp
-hough: hough.cpp
-	g++ -std=c++11 hough.cpp -o hough  `pkg-config --cflags --libs opencv`
-contfix: contfix.cpp
-	g++ -std=c++11 contfix.cpp -o contfix  `pkg-config --cflags --libs opencv`
-contfind: contfind.cpp
-	g++ -std=c++11 contfind.cpp -o contfind  `pkg-config --cflags --libs opencv`
+find_grid: find_grid.cpp
+	g++ -std=c++11 find_grid.cpp -o find_grid `pkg-config --cflags --libs opencv`
+

@@ -4,6 +4,6 @@
 #include <vector>
 #include <string>
 
-std::vector<std::vector<std::string> > find_grid(std::vector<cv::Rect> bb, std::vector<std::string> text)
- 
+std::vector<std::vector<std::string> > find_grid(std::vector<cv::Rect> bb, std::vector<std::string> text);
+  
 #endif

@@ -8,7 +8,7 @@ std::vector<cv::Rect> detect_cells(std::string filename, cv::Rect r){
   using namespace cv;
   Mat img = imread(filename.c_str());
   Mat rsz = Mat(img, r);
-  imshow("rsz", rsz);
+  imshow("img", rsz);
   waitKey(0);
   if (!rsz.data)
     cerr << "Problem loading image. " << endl;
@@ -23,7 +23,7 @@ std::vector<cv::Rect> detect_cells(std::string filename, cv::Rect r){
   }else
     gray = rsz;
   Mat bw;
-  imshow("gray", gray);
+  imshow("img", gray);
   waitKey(0);
   adaptiveThreshold(~gray, bw, 255, CV_ADAPTIVE_THRESH_GAUSSIAN_C,THRESH_BINARY, 15, -2);
   Mat horizontal = bw.clone();
@@ -45,12 +45,12 @@ std::vector<cv::Rect> detect_cells(std::string filename, cv::Rect r){
   dilate(horizontal, horizontal, horizontalStructure, Point(-1,-1));
   
   Mat mask = horizontal + vertical;
-  imshow("bin+mask", bw + mask);
-  //  imshow("mask", mask);
+  imshow("img", bw + mask);
+  //  imshow("img", mask);
   waitKey(0);
   Mat masked;  
   bw.copyTo(masked, ~mask);
-  imshow("masked", masked);
+  imshow("img", masked);
   waitKey(0);
   //IMPROVEMENT
   //remove magic number
@@ -71,7 +71,7 @@ std::vector<cv::Rect> detect_cells(std::string filename, cv::Rect r){
   //dilate(masked,masked,elem_di);
   //erode(masked,masked,elem_er);
   //  dilate(masked,masked,elem_di);
-  imshow("blurred", masked);
+  imshow("img", masked);
   waitKey(0);  
   vector<vector<Point> > contours;
   vector<Vec4i> hierarchy;
@@ -90,7 +90,7 @@ std::vector<cv::Rect> detect_cells(std::string filename, cv::Rect r){
     drawContours(drawing,contours_poly, (int)i, color, 1,8, vector<Vec4i>(), 0, Point() );
     rectangle(rsz, boundRect[i].tl(), boundRect[i].br(), color, 2,8,0);
   }
-  imshow("drawing", rsz);
+  imshow("img", rsz);
   waitKey(0);
   return boundRect;
 }

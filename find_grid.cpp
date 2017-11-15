@@ -142,6 +142,23 @@ vector<Rect> inside(vector<Rect> v, Rect bb){
   return inside;
 }
 
+bool overlap(Rect r1, Rect r2){
+  vector<int> a = rect2vec(r1);
+  vector<int> b = rect2vec(r2);
+  return a[1] >= b[0] &&  a[0] <= b[1];
+}
+
+//IMPROVEMENT
+//do binary search instead of linear search
+int index_below(vector<Rect> rv, Rect r){
+  vector<int> a = rect2vec(r);
+  for (int i = 0; i < rv.size(); i++){
+    if (rv[i].y <= a[3] && rv[i].br().y >= a[4])
+      return i;
+  }
+  return -1;
+}
+
 //IMPROVEMENT
 //Inneficient to use vector here. Should use list or other structure
 vector<int> split(vector<Rect> tb, vector<Rect> rows Rect bb){

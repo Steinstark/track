@@ -129,21 +129,37 @@ vector<Rect> overlapping(vector<Rect>& bb, int p0){
   return obb;
 }
 
-vector<int> split(vector<Rect> v, Rect bb){
-  vector<int> index;
+vector<Rect> inside(vector<Rect> v, Rect bb){
   vector<Rect> inside;
   for (int i = 0; i < v.size(); i++){
     if ( bb.x <= v[i].x &&
 	 bb.x+bb.width >= v[i].x + v[i].width &&
 	 bb.y < v[i].y &&
 	 bb.y + bb.heigth >= v[i].y + v[i].heigth){
-      index.push_back(i);
       inside.push_back(bb[i]);
     }    
   }
-  sort(inside.begin(), inside.end(), rectSortY);
-  
-  return index;
+  return inside;
+}
+
+//IMPROVEMENT
+//Inneficient to use vector here. Should use list or other structure
+vector<int> split(vector<Rect> tb, vector<Rect> rows Rect bb){
+  vector<Rect> ibb = inside(tb, bb);
+  for (int i = 0; i < tb.size(); i++){
+    int index = index_below(tb[i]);
+    Rect r = vec2rect(vector<int>{tb[i].x, tb[i].x+tb[i].width, rows[index], rows[index].br().y});    
+    vector<Rect> tbb = inside(tb, r);
+    int count = 0;
+    for (Rect e : tbb){
+      if (overlap(tb[i], e))
+	count++;      
+    }
+    if (count > 1){
+      //TODO
+      //Remove boxes with too much overlap
+    }
+  }
 }
 
 //IMPROVEMENT

@@ -134,9 +134,9 @@ vector<Rect> inside(vector<Rect> v, Rect bb){
   for (int i = 0; i < v.size(); i++){
     if ( bb.x <= v[i].x &&
 	 bb.x+bb.width >= v[i].x + v[i].width &&
-	 bb.y < v[i].y &&
-	 bb.y + bb.heigth >= v[i].y + v[i].heigth){
-      inside.push_back(bb[i]);
+	 bb.y <= v[i].y &&
+	 bb.y + bb.height >= v[i].y + v[i].height){
+      inside.push_back(v[i]);
     }    
   }
   return inside;
@@ -153,19 +153,30 @@ bool overlap(Rect r1, Rect r2){
 int index_below(vector<Rect> rv, Rect r){
   vector<int> a = rect2vec(r);
   for (int i = 0; i < rv.size(); i++){
-    if (rv[i].y <= a[3] && rv[i].br().y >= a[4])
+    vector<int> b = rect2vec(rv[i]);
+    if (b[2] > a[3])
       return i;
+  }
+  return -1;
+}
+
+int index_inside_y(vector<Rect> v, Rect r){
+  for (int i = 0; i < v.size(); i++){
+    if (v[i].y <= r.y && v[i].br().y >= r.br().y)
+      return i;    
   }
   return -1;
 }
 
 //IMPROVEMENT
 //Inneficient to use vector here. Should use list or other structure
-vector<int> split(vector<Rect> tb, vector<Rect> rows Rect bb){
+vector<int> split_up(vector<Rect> tb, vector<Rect> rows, Rect bb){
   vector<Rect> ibb = inside(tb, bb);
   for (int i = 0; i < tb.size(); i++){
-    int index = index_below(tb[i]);
-    Rect r = vec2rect(vector<int>{tb[i].x, tb[i].x+tb[i].width, rows[index], rows[index].br().y});    
+    int index = index_below(ibb, ibb[i]);
+    int nogoodname = index_inside_y(rows, ibb[index]);
+    vector<int> tmp = {bb.x, bb.x+bb.width, rows[nogoodname].y, rows[nogoodname].br().y};
+    Rect r = vec2rect(tmp);    
     vector<Rect> tbb = inside(tb, r);
     int count = 0;
     for (Rect e : tbb){
@@ -173,10 +184,12 @@ vector<int> split(vector<Rect> tb, vector<Rect> rows Rect bb){
 	count++;      
     }
     if (count > 1){
+      cout << "Found box" << endl;
       //TODO
       //Remove boxes with too much overlap
     }
   }
+  return vector<int>();
 }
 
 //IMPROVEMENT
@@ -203,7 +216,9 @@ vector<vector<string> > find_grid(vector<Rect> bb, vector<string> text){
   for (int i = 0; i < rows.size(); i++){
     yvec[i] = rows[i].tl().y;
   }
-  split();
+  for (int i = 0; i < cols.size(); i++){
+    split_up(bb, rows, cols[i]);
+  }
   for (int i = 0; i < sts.size(); i++){    
     int x_index = bin_search(xvec, stb[i].tl().x);
     int y_index = bin_search(yvec,stb[i].tl().y);

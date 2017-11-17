@@ -1,9 +1,17 @@
 #track: track.cpp
 #	g++ -std=c++11 -o track track.cpp `pkg-config --cflags --libs opencv`   -lleptonica `Magick++-config --cxxflags --cppflags` -ltesseract `Magick++-config --ldflags --libs`
-track: track.cpp detect_table.cpp detect_cell.cpp find_grid.cpp
+
+detect_table.o: detect_table.cpp
 	g++ -g -std=c++11 -c detect_table.cpp
+
+detect_cell.o: detect_cell.cpp
 	g++ -g -std=c++11 -c detect_cell.cpp
-	g++ -g -std=c++11 -o track track.cpp detect_table.o detect_cell.o `pkg-config --cflags --libs opencv` -lleptonica -ltesseract
+
+find_grid.o: find_grid.cpp
+	g++ -g -std=c++11 -c find_grid.cpp
+
+track: track.cpp find_grid.cpp detect_table.o detect_cell.o find_grid.o
+	g++ -g -std=c++11 -o track track.cpp find_grid.o detect_table.o detect_cell.o `pkg-config --cflags --libs opencv` -lleptonica -ltesseract
 
 detect_table: detect_table.cpp
 	g++ -std=c++11 detect_table.cpp -o detect_table `pkg-config --cflags --libs opencv`

@@ -1,6 +1,9 @@
 #track: track.cpp
 #	g++ -std=c++11 -o track track.cpp `pkg-config --cflags --libs opencv`   -lleptonica `Magick++-config --cxxflags --cppflags` -ltesseract `Magick++-config --ldflags --libs`
 
+test: test.cpp
+	g++ -g -std=c++17 test.cpp -o test
+
 detect_table.o: detect_table.cpp
 	g++ -g -std=c++11 -c detect_table.cpp
 

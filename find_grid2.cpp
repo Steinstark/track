@@ -65,7 +65,9 @@ vector<Rect> split(mapiv& cols,mapiv& rows, vector<Rect> boundingBoxes){
   }
   return boundingBoxes;
 }
-  
+
+  //IMPROVEMENT
+  //detect headers ahead of the overlap
 vector<vector<string> > find_grid(const vector<Rect>& boundingBoxes,
 				  const vector<string>& text)
 {
@@ -78,19 +80,21 @@ vector<vector<string> > find_grid(const vector<Rect>& boundingBoxes,
   }
   mapiv cols = overlapping(xtree, boundingBoxes, [](const Rect& r){return r.width;});
   mapiv rows = overlapping(ytree, boundingBoxes, [](const Rect& r){return r.height;});  
-  split(rows, cols, boundingsBoxes)
+  split(rows, cols, boundingsBoxes);
   vector<vector<string> > table(cols.size(), vector<string>(rows.size(),""));  
-  //TODO
-  //Need rewriting. Will not work (the way it's expected)
-  for (int i = 0; i < text.size(); i++){
-    Rect r = boundingBoxes[i];
-    auto itx = cols.lower_bound(r.x);
-    auto ity = rows.lower_bound(r.y);
-    if (itx->first != r.x)
-      itx--;
-    if (ity->first !=r.y)
-      ity--;
-    table[itx->first][ity->first] += text[i];
-  }    
+  int i = 0, j;
+  for (auto c : cols){
+    j = 0;
+    for (auto r: rows){
+      vector<int> intersect;
+      set_intersect(c.second.begin(), c.second.end(),
+		    r.second.begin(), r.second.end(), intersect.begin());
+      for (int k = 0; k < intersect.size(); k++){
+	table[i][j] += text[intersect[k]];
+      }
+      j++;
+    }    
+    i++
+  }  
   return table;
 }

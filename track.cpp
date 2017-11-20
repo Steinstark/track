@@ -10,6 +10,7 @@
 #include "detect_table.hpp"
 #include "detect_cell.hpp"
 #include "find_grid.hpp"
+#include "textbox_ocr.hpp"
 
 using namespace std;
 
@@ -24,29 +25,6 @@ void doc2png(string pdf, string png){
   img.write(png);*/
   return;
 }    
-
-//IMPROVEMENT
-//Inefficient to load image for every table (if multiple tables on the same page)
-
-vector<string> identify_content(string path, cv::Rect table, vector<cv::Rect> rv){
-  tesseract::TessBaseAPI *api = new tesseract::TessBaseAPI();
-  if (api->Init(NULL, "eng")) {
-    fprintf(stderr, "Could not initialize tesseract.\n");
-    exit(1);
-  }
-  Pix *image = pixRead(path.c_str());
-  api->SetImage(image);
-  cv::Point pt = table.tl();
-  vector<string> v;
-  for (cv::Rect r : rv){
-    cv::Point pc = r.tl();
-    api->SetRectangle(pt.x+pc.x, pt.y+pc.y, r.width, r.height);
-    v.push_back(string(api->GetUTF8Text()));    
-  }
-  api->End();
-  pixDestroy(&image);  
-  return v;
-}
 
 //TODO
 //add RDF-logic
@@ -67,12 +45,11 @@ int main(int argc, char** argv){
     //IMPROVEMENT
     //Read image file once for all tables in it instead of once for every table
     vector<cv::Rect> cells = detect_cells(png, table);
-    vector<string> content = identify_content(png,table, cells);
+    vector<string> content = textbox_content(png,table, cells);
     //logic_layout(cells, content);
     for (string s : content){
       cout << s << endl;
     }
-    find_grid(cells, content);
   }
   return 0;
 }

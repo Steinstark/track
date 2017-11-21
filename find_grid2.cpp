@@ -3,6 +3,8 @@
 #include <string>
 #include <set>
 #include <map>
+#include <iterator>
+
 #include <opencv2/opencv.hpp>
 #include "find_grid.hpp"
 
@@ -34,7 +36,7 @@ greatest_less(Map & m, typename Map::key_type const& k) {
   }
 
 //Take a function as input to get width or heigth
-mapiv overlapping(map<int, int>& tree, vector<Rect>& boundingBoxes, function<int(Rect)> val){
+mapiv overlapping(multimap<int, int>& tree, vector<Rect>& boundingBoxes, function<int(Rect)> val){
   mapiv overlap;
   int left = tree.begin()->first;
   int right = left;
@@ -50,6 +52,7 @@ mapiv overlapping(map<int, int>& tree, vector<Rect>& boundingBoxes, function<int
       sort(a0.begin(), a0.end());
       overlap.insert({left, a0});
       a0.clear();
+      a0.push_back(p.second);
       left = ll;
       right = lr;
     }
@@ -68,9 +71,10 @@ void split(mapiv& cols,mapiv& rows, vector<Rect> boundingBoxes, vector<string> t
     Point br = r.br();
     auto itlow_y = rows.lower_bound(br.y+1);
     auto itlow_x = greatest_less(cols, tl.x);
-    vector<int> intersect(100);
+    vector<int> intersect;
     set_intersection(itlow_y->second.begin(), itlow_y->second.end(),
-		     itlow_x->second.begin(), itlow_x->second.end(), intersect.begin());
+		     itlow_x->second.begin(), itlow_x->second.end(),
+		     back_inserter(intersect));
     vector<int> overlap_index;
     for (int j= 0; j < intersect.size(); j++){      
       if (compareRect(r, boundingBoxes[intersect[j]])){
@@ -94,8 +98,8 @@ void split(mapiv& cols,mapiv& rows, vector<Rect> boundingBoxes, vector<string> t
 vector<vector<string> > find_grid(vector<Rect> boundingBoxes,
 				  vector<string> text)
 {
-  map<int, int> xtree;
-  map<int, int> ytree;
+  multimap<int, int> xtree;
+  multimap<int, int> ytree;
   for (int i = 0; i < boundingBoxes.size(); i++){
     Rect r = boundingBoxes[i];
     xtree.insert({r.x, i});
@@ -120,7 +124,7 @@ vector<vector<string> > find_grid(vector<Rect> boundingBoxes,
     for (auto r: rows){
       vector<int> intersect;
       set_intersection(c.second.begin(), c.second.end(),
-		       r.second.begin(), r.second.end(), intersect.begin());
+		       r.second.begin(), r.second.end(), back_inserter(intersect));
       for (int k = 0; k < intersect.size(); k++){
 	table[i][j] += text[intersect[k]];
       }

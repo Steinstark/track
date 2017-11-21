@@ -12,7 +12,7 @@ std::vector<Rect> detect_cells(string filename, Rect r){
   Mat img = imread(filename.c_str());
   Mat rsz = Mat(img, r);
   imshow("img", rsz);
-  waitKey(0);
+  //waitKey(0);
   if (!rsz.data)
     cerr << "Problem loading image. " << endl;
   //IMPROVEMENT
@@ -27,7 +27,7 @@ std::vector<Rect> detect_cells(string filename, Rect r){
     gray = rsz;
   Mat bw;
   imshow("img", gray);
-  waitKey(0);
+  //waitKey(0);
   adaptiveThreshold(~gray, bw, 255, CV_ADAPTIVE_THRESH_GAUSSIAN_C,THRESH_BINARY, 15, -2);
   Mat horizontal = bw.clone();
   Mat vertical = bw.clone();
@@ -50,11 +50,11 @@ std::vector<Rect> detect_cells(string filename, Rect r){
   Mat mask = horizontal + vertical;
   imshow("img", bw + mask);
   //  imshow("img", mask);
-  waitKey(0);
+  //waitKey(0);
   Mat masked;  
   bw.copyTo(masked, ~mask);
   imshow("img", masked);
-  waitKey(0);
+  //waitKey(0);
   //IMPROVEMENT
   //remove magic number
   int es=6;
@@ -75,7 +75,7 @@ std::vector<Rect> detect_cells(string filename, Rect r){
   //erode(masked,masked,elem_er);
   //  dilate(masked,masked,elem_di);
   imshow("img", masked);
-  waitKey(0);  
+  //waitKey(0);  
   vector<vector<Point> > contours;
   vector<Vec4i> hierarchy;
   findContours(masked, contours, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE, Point(0,0));
@@ -94,6 +94,6 @@ std::vector<Rect> detect_cells(string filename, Rect r){
     rectangle(rsz, boundRect[i].tl(), boundRect[i].br(), color, 2,8,0);
   }
   imshow("img", rsz);
-  waitKey(0);
+  //waitKey(0);
   return boundRect;
 }

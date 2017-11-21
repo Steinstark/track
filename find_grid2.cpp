@@ -1,20 +1,43 @@
 #include <algorithm>
 #include <vector>
 #include <string>
+#include <set>
 #include <map>
-#include <multimap>
 #include <opencv2/opencv.hpp>
 #include "find_grid.hpp"
 
 using namespace std;
 using namespace cv;
 
-using map<int, vector<int> > = mapiv;
+using mapiv = map<int, vector<int> >;
+
+bool compareRect(const Rect& a, const Rect& b){
+  return a.x <= b.br().x && b.x <= a.br().x;
+}
+
+/*template<typename Map> typename Map::const_iterator 
+greatest_less(Map const& m, typename Map::key_type const& k) {
+  typename Map::const_iterator it = m.lower_bound(k);    
+  if(it == m.begin()) {
+    return it;
+  }
+  return --it;
+}
+
+template<typename Map> typename Map::iterator 
+greatest_less(Map & m, typename Map::key_type const& k) {
+  typename Map::iterator it = m.lower_bound(k);
+  if(it == m.begin()) {
+    return it;
+  }
+  return --it;
+  }*/
 
 //Take a function as input to get width or heigth
 mapiv overlapping(map<int, int>& tree, vector<Rect>& boundingBoxes, function<int(Rect)> val){
-  map<int, int> overlap;
-  int left = right = tree.begin().first;
+  mapiv overlap;
+  int left = tree.begin()->first;
+  int right = left;
   vector<int> a0;
   for (auto p : tree){
     int ll = p.first;
@@ -24,7 +47,7 @@ mapiv overlapping(map<int, int>& tree, vector<Rect>& boundingBoxes, function<int
       right = max(right, lr);
       a0.push_back(p.second);
     }else{
-      sort(a0.begin(), a0.end())
+      sort(a0.begin(), a0.end());
       overlap.insert({left, a0});
       a0.clear();
       left = ll;
@@ -33,24 +56,24 @@ mapiv overlapping(map<int, int>& tree, vector<Rect>& boundingBoxes, function<int
   }
   if (overlap.lower_bound(left) == overlap.end()){
     sort(a0.begin(), a0.end());
-    overap.insert({left, a0});
+    overlap.insert({left, a0});
   }
   return overlap;
 }
 
-vector<Rect> split(mapiv& cols,mapiv& rows, vector<Rect> boundingBoxes){
+void split(mapiv& cols,mapiv& rows, vector<Rect> boundingBoxes, vector<string> text){
   for (int i = 0; i < boundingBoxes.size(); i++){
     Rect r = boundingBoxes[i];
     Point tl = r.tl();
     Point br = r.br();
     auto itlow_y = rows.lower_bound(br.y+1);
-    auto itlow_x = floor_it(cols, tl.x);
+    auto itlow_x = greatest_less(cols, tl.x);
     vector<int> intersect;
     set_intersection(itlow_y->second.begin(), itlow_y->second.end(),
 		     itlow_x->second.begin(), itlow_x->second.end(), intersect.begin());
     vector<int> overlap_index;
     for (int j= 0; j < intersect.size(); j++){      
-      if (compareRect(r, boundingBox[intersect[j]])){
+      if (compareRect(r, boundingBoxes[intersect[j]])){
 	overlap_index.push_back(intersect[j]);
       }
     }
@@ -59,17 +82,17 @@ vector<Rect> split(mapiv& cols,mapiv& rows, vector<Rect> boundingBoxes){
       boundingBoxes[i] = Rect(a0.x, a0.width,r.y,r.height);
       for (int j = 1; j < overlap_index.size(); j++){
 	a0 = boundingBoxes[overlap_index[j]];	
-	boundingBoxes.push_back(Rect(a0.x, a0.width, r.y, r.height);
+	boundingBoxes.push_back(Rect(a0.x, a0.width, r.y, r.height));
+	text.push_back(text[overlap_index[j]]);
       }
     }
   }
-  return boundingBoxes;
 }
 
-  //IMPROVEMENT
-  //detect headers ahead of the overlap
-vector<vector<string> > find_grid(const vector<Rect>& boundingBoxes,
-				  const vector<string>& text)
+//IMPROVEMENT
+//detect headers ahead of the overlap
+vector<vector<string> > find_grid(vector<Rect> boundingBoxes,
+				  vector<string> text)
 {
   map<int, int> xtree;
   map<int, int> ytree;
@@ -80,21 +103,30 @@ vector<vector<string> > find_grid(const vector<Rect>& boundingBoxes,
   }
   mapiv cols = overlapping(xtree, boundingBoxes, [](const Rect& r){return r.width;});
   mapiv rows = overlapping(ytree, boundingBoxes, [](const Rect& r){return r.height;});  
-  split(rows, cols, boundingsBoxes);
+  split(rows, cols, boundingBoxes, text);
+  xtree.clear();
+  ytree.clear();
+  for (int i = 0; i < boundingBoxes.size(); i++){
+    Rect r = boundingBoxes[i];
+    xtree.insert({r.x, i});
+    ytree.insert({r.y, i});
+  }
+  cols = overlapping(xtree, boundingBoxes, [](const Rect& r){return r.width;});
+  rows = overlapping(ytree, boundingBoxes, [](const Rect& r){return r.height;});  
   vector<vector<string> > table(cols.size(), vector<string>(rows.size(),""));  
   int i = 0, j;
   for (auto c : cols){
     j = 0;
     for (auto r: rows){
       vector<int> intersect;
-      set_intersect(c.second.begin(), c.second.end(),
-		    r.second.begin(), r.second.end(), intersect.begin());
+      set_intersection(c.second.begin(), c.second.end(),
+		       r.second.begin(), r.second.end(), intersect.begin());
       for (int k = 0; k < intersect.size(); k++){
 	table[i][j] += text[intersect[k]];
       }
       j++;
     }    
-    i++
+    i++;
   }  
   return table;
 }

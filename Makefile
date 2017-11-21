@@ -10,14 +10,14 @@ detect_table.o: detect_table.cpp
 detect_cell.o: detect_cell.cpp
 	g++ -g -std=c++11 -c detect_cell.cpp
 
-find_grid.o: find_grid.cpp
-	g++ -g -std=c++11 -c find_grid.cpp
+find_grid.o: find_grid2.cpp
+	g++ -g -std=c++11 -c find_grid2.cpp
 
 textbox_ocr.o: textbox_ocr.cpp
 	g++ -g -std=c++11 -c textbox_ocr.cpp
 
-track: track.cpp detect_table.o detect_cell.o find_grid.o textbox_ocr.o
-	g++ -g -std=c++11 -o track track.cpp detect_table.o detect_cell.o textbox_ocr.o `pkg-config --cflags --libs opencv` -lleptonica -ltesseract
+track: track.cpp detect_table.o detect_cell.o find_grid2.o textbox_ocr.o
+	g++ -g -std=c++11 -o track track.cpp detect_table.o detect_cell.o textbox_ocr.o find_grid2.o `pkg-config --cflags --libs opencv` -lleptonica -ltesseract
 
 detect_table: detect_table.cpp
 	g++ -std=c++11 detect_table.cpp -o detect_table `pkg-config --cflags --libs opencv`

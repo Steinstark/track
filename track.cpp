@@ -50,6 +50,7 @@ int main(int argc, char** argv){
     for (string s : content){
       cout << s << endl;
     }
+    find_grid(cells, content);
   }
  return 0;
 }

@@ -15,7 +15,7 @@ bool compareRect(const Rect& a, const Rect& b){
   return a.x <= b.br().x && b.x <= a.br().x;
 }
 
-/*template<typename Map> typename Map::const_iterator 
+template<typename Map> typename Map::const_iterator 
 greatest_less(Map const& m, typename Map::key_type const& k) {
   typename Map::const_iterator it = m.lower_bound(k);    
   if(it == m.begin()) {
@@ -31,7 +31,7 @@ greatest_less(Map & m, typename Map::key_type const& k) {
     return it;
   }
   return --it;
-  }*/
+  }
 
 //Take a function as input to get width or heigth
 mapiv overlapping(map<int, int>& tree, vector<Rect>& boundingBoxes, function<int(Rect)> val){
@@ -68,7 +68,7 @@ void split(mapiv& cols,mapiv& rows, vector<Rect> boundingBoxes, vector<string> t
     Point br = r.br();
     auto itlow_y = rows.lower_bound(br.y+1);
     auto itlow_x = greatest_less(cols, tl.x);
-    vector<int> intersect;
+    vector<int> intersect(100);
     set_intersection(itlow_y->second.begin(), itlow_y->second.end(),
 		     itlow_x->second.begin(), itlow_x->second.end(), intersect.begin());
     vector<int> overlap_index;

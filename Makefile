@@ -10,7 +10,7 @@ detect_table.o: detect_table.cpp
 detect_cell.o: detect_cell.cpp
 	g++ -g -std=c++11 -c detect_cell.cpp
 
-find_grid.o: find_grid2.cpp
+find_grid2.o: find_grid2.cpp
 	g++ -g -std=c++11 -c find_grid2.cpp
 
 textbox_ocr.o: textbox_ocr.cpp

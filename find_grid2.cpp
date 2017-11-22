@@ -65,11 +65,14 @@ mapiv overlapping(multimap<int, int>& tree, vector<Rect>& boundingBoxes, functio
 }
 
 void split(mapiv& cols,mapiv& rows, vector<Rect>& boundingBoxes, vector<string>& text){
-  for (int i = 0; i < boundingBoxes.size(); i++){
+  int length = boundingBoxes.size();
+  for (int i = 0; i < length; i++){
     Rect r = boundingBoxes[i];
     Point tl = r.tl();
     Point br = r.br();
     auto itlow_y = rows.lower_bound(br.y+1);
+    if (itlow_y == rows.end())
+      continue;
     auto itlow_x = greatest_less(cols, tl.x);
     vector<int> intersect;
     set_intersection(itlow_y->second.begin(), itlow_y->second.end(),
@@ -107,7 +110,7 @@ vector<vector<string> > find_grid(vector<Rect> boundingBoxes,
   }
   mapiv cols = overlapping(xtree, boundingBoxes, [](const Rect& r){return r.width;});
   mapiv rows = overlapping(ytree, boundingBoxes, [](const Rect& r){return r.height;});  
-  split(rows, cols, boundingBoxes, text);
+  split(cols, rows, boundingBoxes, text);
   xtree.clear();
   ytree.clear();
   for (int i = 0; i < boundingBoxes.size(); i++){

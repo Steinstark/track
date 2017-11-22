@@ -1,4 +1,5 @@
 #include "detect_table.hpp"
+#include <vector>
 
 using namespace std;
 using namespace cv;
@@ -27,13 +28,24 @@ Rect detect_tables(string filename){
   Mat cc;
   Mat stats;
   Mat centroids;
-  connectedComponentstWithStats(bw, cc, stats, centroids), 8, CV_32S;
-  
-  
-  
+  nLabels = connectedComponentstWithStats(bw, cc, stats, centroids, 8, CV_32S);
+  vector<Rect> bb;
+  vector<int> areas;
+  vector<double> density;
+  //TODO
+  //get stats of number of overlapping boundingboxes for each component
+  //might be possible to do efficiently with an r-tree. This should prob
+  //been mentioned in the original article
+  for (int i = 1; i < nLabels; i++){
+    int left = stats.at<int>(i, CC_STAT_LEFT);
+    int top = stats.at<int>(i, CC_STAT_TOP);
+    int width = stats.at<int>(i, CC_STAT_WIDTH);
+    int height = stats.at<int>(i, CC_STAT_HEIGHT);
+    bb.push_back(Rect(left, top, width, height));
+    areas.push_back(stats.at<int>(i, CC_STAT_AREA));
+    density.push_back(areas[i-1]/bb[i-1].area());
+  }  
 }
-
-
-int main(int argc, char** argv){
+ main(int argc, char** argv){
   detect_tables(string(argv[1]));
 }

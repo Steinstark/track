@@ -64,7 +64,7 @@ mapiv overlapping(multimap<int, int>& tree, vector<Rect>& boundingBoxes, functio
   return overlap;
 }
 
-void split(mapiv& cols,mapiv& rows, vector<Rect> boundingBoxes, vector<string> text){
+void split(mapiv& cols,mapiv& rows, vector<Rect>& boundingBoxes, vector<string>& text){
   for (int i = 0; i < boundingBoxes.size(); i++){
     Rect r = boundingBoxes[i];
     Point tl = r.tl();
@@ -83,11 +83,11 @@ void split(mapiv& cols,mapiv& rows, vector<Rect> boundingBoxes, vector<string> t
     }
     if (overlap_index.size() > 1){
       Rect a0 = boundingBoxes[overlap_index[0]];
-      boundingBoxes[i] = Rect(a0.x, a0.width,r.y,r.height);
+      boundingBoxes[i] = Rect(a0.x,r.y, a0.width,r.height);
       for (int j = 1; j < overlap_index.size(); j++){
 	a0 = boundingBoxes[overlap_index[j]];	
-	boundingBoxes.push_back(Rect(a0.x, a0.width, r.y, r.height));
-	text.push_back(text[overlap_index[j]]);
+	boundingBoxes.push_back(Rect(a0.x, r.y, a0.width, r.height));
+	text.push_back(text[i]);
       }
     }
   }

@@ -11,7 +11,7 @@ std::vector<Rect> detect_cells(string filename, Rect r){
   using namespace cv;
   Mat img = imread(filename.c_str());
   Mat rsz = Mat(img, r);
-  imshow("img", rsz);
+  //imshow("img", rsz);
   //waitKey(0);
   if (!rsz.data)
     cerr << "Problem loading image. " << endl;
@@ -26,7 +26,7 @@ std::vector<Rect> detect_cells(string filename, Rect r){
   }else
     gray = rsz;
   Mat bw;
-  imshow("img", gray);
+  //imshow("img", gray);
   //waitKey(0);
   adaptiveThreshold(~gray, bw, 255, CV_ADAPTIVE_THRESH_GAUSSIAN_C,THRESH_BINARY, 15, -2);
   Mat horizontal = bw.clone();
@@ -48,21 +48,13 @@ std::vector<Rect> detect_cells(string filename, Rect r){
   dilate(horizontal, horizontal, horizontalStructure, Point(-1,-1));
   
   Mat mask = horizontal + vertical;
-  imshow("img", bw + mask);
+  //imshow("img", bw + mask);
   //  imshow("img", mask);
   //waitKey(0);
   Mat masked;  
   bw.copyTo(masked, ~mask);
-  imshow("img", masked);
+  //imshow("img", masked);
   //waitKey(0);
-  //IMPROVEMENT
-  //remove magic number
-  int es=6;
-  int ed=4;
-  //IMPROVEMENT
-  //remove magic number
-  //Mat elem_er = getStructuringElement( cv::MORPH_ELLIPSE,Size( es + 1, 2*es+1 ),Point( es, es ) );
-  //Mat elem_di = getStructuringElement( cv::MORPH_ELLIPSE,Size( 4*ed + 1, ed+1 ),Point( ed, ed ) );
   //IMPROVEMENT
   //remove magic number
   horizontalStructure = getStructuringElement(MORPH_RECT, Size(10,1));
@@ -74,7 +66,7 @@ std::vector<Rect> detect_cells(string filename, Rect r){
   //dilate(masked,masked,elem_di);
   //erode(masked,masked,elem_er);
   //  dilate(masked,masked,elem_di);
-  imshow("img", masked);
+  //imshow("img", masked);
   //waitKey(0);  
   vector<vector<Point> > contours;
   vector<Vec4i> hierarchy;
@@ -94,6 +86,6 @@ std::vector<Rect> detect_cells(string filename, Rect r){
     rectangle(rsz, boundRect[i].tl(), boundRect[i].br(), color, 2,8,0);
   }
   imshow("img", rsz);
-  //waitKey(0);
+  waitKey(0);
   return boundRect;
 }

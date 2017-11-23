@@ -1,6 +1,5 @@
 #include <iostream>
 #include <vector>
-//#include <Magick++.h> 
 #include <string>
 #include <tesseract/baseapi.h>
 #include <leptonica/allheaders.h>
@@ -12,6 +11,9 @@
 #include "find_grid.hpp"
 #include "textbox_ocr.hpp"
 
+//Magick header need to be placed last because of bug in Magick++ library
+#include <Magick++.h> 
+
 using namespace std;
 
 //TODO
@@ -19,10 +21,10 @@ using namespace std;
 //IMRPOVEMENT
 //use stream instead of writing to file
 void doc2png(string pdf, string png){
-  /*using namespace Magick;
+  using namespace Magick;
   InitializeMagick(NULL);  
   Image img(pdf);
-  img.write(png);*/
+  img.write(png);
   return;
 }    
 

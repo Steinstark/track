@@ -17,8 +17,6 @@
 using namespace std;
 
 //TODO
-//unresolved conflict with opencv and imagemagick. Need solution
-//IMRPOVEMENT
 //use stream instead of writing to file
 void doc2png(string pdf, string png){
   using namespace Magick;

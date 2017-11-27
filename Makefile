@@ -1,8 +1,5 @@
-#track: track.cpp
-#	g++ -std=c++11 -o track track.cpp `pkg-config --cflags --libs opencv`   -lleptonica `Magick++-config --cxxflags --cppflags` -ltesseract `Magick++-config --ldflags --libs`
-
 test: test.cpp
-	g++ -g -std=c++11 test.cpp -o test `Magick++-config --cxxflags --cppflags` `Magick++-config --ldflags --libs` `pkg-config --cflags --libs opencv`   -lleptonica -ltesseract
+	g++ -g -std=c++11 test.cpp -o test `Magick++-config --cxxflags --cppflags` `Magick++-config --ldflags --libs` `pkg-config --cflags --libs opencv`   -lleponica -ltesseract
 
 detect_table.o: detect_table.cpp
 	g++ -g -std=c++11 -c detect_table.cpp
@@ -17,7 +14,7 @@ textbox_ocr.o: textbox_ocr.cpp
 	g++ -g -std=c++11 -c textbox_ocr.cpp
 
 track: track.cpp detect_table.o detect_cell.o find_grid2.o textbox_ocr.o
-	g++ -g -std=c++11 -o track track.cpp detect_table.o detect_cell.o textbox_ocr.o find_grid2.o `Magick++-config --cxxflags --cppflags` `Magick++-config --ldflags --libs` `pkg-config --cflags --libs opencv` -lleptonica -ltesseract
+	g++ -g -std=c++11 -o track track.cpp detect_table.o detect_cell.o textbox_ocr.o find_grid2.o `Magick++-config --cxxflags --cppflags` `Magick++-config --ldflags --libs` `pkg-config --cflags --libs opencv` -llept -ltesseract
 
 detect_table: detect_table.cpp
 	g++ -std=c++11 detect_table.cpp -o detect_table `pkg-config --cflags --libs opencv`

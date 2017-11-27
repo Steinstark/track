@@ -1,5 +1,6 @@
 #include <vector>
 #include <algorithm>
+
 #include "detect_table.hpp"
 
 
@@ -32,9 +33,18 @@ bool isHomogenous(Stats stats){
   
 }
 
+void homogenityStats(){
+  Mat src;
+  Mat dst;
+  int s = 5;
+  reduce(src, dst, 1, CV_REDUCE_SUM);
+  blur(src, dst, Size(1,5));
+  
+}
+    
 vector<Rect> homogenitySplit(Rect r){
   auto stats = homogenityStats(r);
-  if (isHomogenous(stats))
+  if (isHomogenous(stats))    
     return r;
   vector<Rect>  srv = split(r, stats);
   vector<Rect> v0 = homogenitySplit(srv[0]);
@@ -95,6 +105,13 @@ vector<int> heuristic_filter(Mat& in, Mat& out, Mat& stats ){
   }
 }
 
+void mla(){
+  vector<Rect> homboxes = homogenitySplit();
+  for (int i = 0; i < homboxes.size(); i++){
+    recursive_filter(homboxes[i]);
+  }
+}
+
 Rect detect_tables(string filename){
   Mat img = imread(filename.c_str());  
   if (!img.data)
@@ -105,10 +122,7 @@ Rect detect_tables(string filename){
   Mat centroids;
   nLabels = connectedComponentstWithStats(bw, cc, stats, centroids, 8, CV_32S);
   heuristic_filter(bw, bw, stats);
-  vector<Rect> homboxes = homogenitySplit();
-  for (int i = 0; i < homboxes.size(); i++){
-    recursive_filter(homboxes[i]);
-  }
+  mla();
   noise_removal(bw);
 }
  main(int argc, char** argv){

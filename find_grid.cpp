@@ -1,228 +1,139 @@
 #include <algorithm>
 #include <vector>
 #include <string>
+#include <set>
+#include <map>
+#include <iterator>
+
 #include <opencv2/opencv.hpp>
 #include "find_grid.hpp"
 
 using namespace std;
 using namespace cv;
 
-template <typename T, typename Compare>
-std::vector<std::size_t> sort_permutation(
-    const std::vector<T>& vec,
-    Compare compare)
-{
-    std::vector<std::size_t> p(vec.size());
-    std::iota(p.begin(), p.end(), 0);
-    std::sort(p.begin(), p.end(),
-        [&](std::size_t i, std::size_t j){ return compare(vec[i], vec[j]); });
-    return p;
+using mapiv = map<int, vector<int> >;
+
+bool compareRect(const Rect& a, const Rect& b){
+  return a.x <= b.br().x && b.x <= a.br().x;
 }
 
-template <typename T>
-std::vector<T> apply_permutation(
-    const std::vector<T>& vec,
-    const std::vector<std::size_t>& p)
-{
-    std::vector<T> sorted_vec(vec.size());
-    std::transform(p.begin(), p.end(), sorted_vec.begin(),
-        [&](std::size_t i){ return vec[i]; });
-    return sorted_vec;
-}
-
-template <typename T>
-void apply_permutation_in_place(
-    std::vector<T>& vec,
-    const std::vector<std::size_t>& p)
-{
-    std::vector<bool> done(vec.size());
-    for (std::size_t i = 0; i < vec.size(); ++i)
-    {
-        if (done[i])
-        {
-            continue;
-        }
-        done[i] = true;
-        std::size_t prev_j = i;
-        std::size_t j = p[i];
-        while (i != j)
-        {
-            std::swap(vec[prev_j], vec[j]);
-            done[j] = true;
-            prev_j = j;
-            j = p[j];
-        }
-    }
-}
-
-
-struct rectSortX
-{
-  bool operator()(const cv::Rect &a, const cv::Rect &b) const{
-    return a.tl().x < b.tl().x;
+template<typename Map> typename Map::const_iterator 
+greatest_less(Map const& m, typename Map::key_type const& k) {
+  typename Map::const_iterator it = m.lower_bound(k);    
+  if(it == m.begin()) {
+    return it;
   }
-};
+  return --it;
+}
 
-struct rectSortY
-{
-  bool operator()(const cv::Rect &a, const cv::Rect &b) const{
-    return a.tl().y < b.tl().y;
+template<typename Map> typename Map::iterator 
+greatest_less(Map & m, typename Map::key_type const& k) {
+  typename Map::iterator it = m.lower_bound(k);
+  if(it == m.begin()) {
+    return it;
   }
-};
-
-int bin_search(vector<int>& v, int val){
-  int l = 0;
-  int r = v.size()-1;  
-  while (l <= r){
-    int mid =(l + r)/2;
-    if (mid+1 == v.size() || (v[mid] <= val && v[mid+1] > val))
-      return mid;
-    if (v[mid] > val)
-      r = mid-1;
-    else
-      l = mid+1;    
+  return --it;
   }
-  //Should never happen given the input
-  return -1;
-}
 
-vector<int> rect2vec(cv::Rect r){
-  vector<int> v(4);
-  Point p = r.tl();
-  v[0] = p.x;
-  v[2] = p.y;
-  p = r.br();
-  v[1] = p.x;
-  v[3] = p.y;
-  return v;
-}
-
-Rect vec2rect(vector<int> v){
-  return Rect(v[0], v[2], v[1]-v[0], v[3]-v[2]);
-}
-
-vector<Rect> overlapping(vector<Rect>& bb, int p0){
-  vector<Rect> obb;
-  vector<int> b = rect2vec(bb[0]);
-  int p1 = p0+1, s0 = (p0+2)%4 , s1 = (p0+3)%4;
-  vector<int> cb;
-  for (int i = 0; i < bb.size(); i++){
-    cb = rect2vec(bb[i]);
-    if (b[p1] > cb[p0]){
-      if (cb[p1] > b[p1]){
-	b[p1] = cb[p1];
-      }
-      if (cb[s1] > b[s1]){
-	b[s1] = cb[s1];
-      }
-      if (cb[s0] < b[s0]){
-	b[s0] = cb[s0];
-      }
-    }
-    else{
-      obb.push_back(vec2rect(b));
-      b = cb;
+//Take a function as input to get width or heigth
+mapiv overlapping(multimap<int, int>& tree, vector<Rect>& boundingBoxes, function<int(Rect)> val){
+  mapiv overlap;
+  int left = tree.begin()->first;
+  int right = left;
+  vector<int> a0;
+  for (auto p : tree){
+    int ll = p.first;
+    int lr = p.first + val(boundingBoxes[p.second]);
+    if (ll <= right && lr >= left){
+      left = min(left, ll);
+      right = max(right, lr);
+      a0.push_back(p.second);
+    }else{
+      sort(a0.begin(), a0.end());
+      overlap.insert({left, a0});
+      a0.clear();
+      a0.push_back(p.second);
+      left = ll;
+      right = lr;
     }
   }
-  if (cb != b)
-    obb.push_back(vec2rect(b));
-  return obb;
+  if (overlap.lower_bound(left) == overlap.end()){
+    sort(a0.begin(), a0.end());
+    overlap.insert({left, a0});
+  }
+  return overlap;
 }
 
-vector<Rect> inside(vector<Rect> v, Rect bb){
-  vector<Rect> inside;
-  for (int i = 0; i < v.size(); i++){
-    if ( bb.x <= v[i].x &&
-	 bb.x+bb.width >= v[i].x + v[i].width &&
-	 bb.y <= v[i].y &&
-	 bb.y + bb.height >= v[i].y + v[i].height){
-      inside.push_back(v[i]);
+void split(mapiv& cols,mapiv& rows, vector<Rect>& boundingBoxes, vector<string>& text){
+  int length = boundingBoxes.size();
+  for (int i = 0; i < length; i++){
+    Rect r = boundingBoxes[i];
+    Point tl = r.tl();
+    Point br = r.br();
+    auto itlow_y = rows.lower_bound(br.y+1);
+    if (itlow_y == rows.end())
+      continue;
+    auto itlow_x = greatest_less(cols, tl.x);
+    vector<int> intersect;
+    set_intersection(itlow_y->second.begin(), itlow_y->second.end(),
+		     itlow_x->second.begin(), itlow_x->second.end(),
+		     back_inserter(intersect));
+    vector<int> overlap_index;
+    for (int j= 0; j < intersect.size(); j++){      
+      if (compareRect(r, boundingBoxes[intersect[j]])){
+	overlap_index.push_back(intersect[j]);
+      }
+    }
+    if (overlap_index.size() > 1){
+      Rect a0 = boundingBoxes[overlap_index[0]];
+      boundingBoxes[i] = Rect(a0.x,r.y, a0.width,r.height);
+      for (int j = 1; j < overlap_index.size(); j++){
+	a0 = boundingBoxes[overlap_index[j]];	
+	boundingBoxes.push_back(Rect(a0.x, r.y, a0.width, r.height));
+	text.push_back(text[i]);
+      }
+    }
+  }
+}
+
+//IMPROVEMENT
+//detect headers ahead of the overlap
+vector<vector<string> > find_grid(vector<Rect> boundingBoxes,
+				  vector<string> text)
+{
+  multimap<int, int> xtree;
+  multimap<int, int> ytree;
+  for (int i = 0; i < boundingBoxes.size(); i++){
+    Rect r = boundingBoxes[i];
+    xtree.insert({r.x, i});
+    ytree.insert({r.y, i});
+  }
+  mapiv cols = overlapping(xtree, boundingBoxes, [](const Rect& r){return r.width;});
+  mapiv rows = overlapping(ytree, boundingBoxes, [](const Rect& r){return r.height;});  
+  split(cols, rows, boundingBoxes, text);
+  xtree.clear();
+  ytree.clear();
+  for (int i = 0; i < boundingBoxes.size(); i++){
+    Rect r = boundingBoxes[i];
+    xtree.insert({r.x, i});
+    ytree.insert({r.y, i});
+  }
+  cols = overlapping(xtree, boundingBoxes, [](const Rect& r){return r.width;});
+  rows = overlapping(ytree, boundingBoxes, [](const Rect& r){return r.height;});  
+  vector<vector<string> > table(cols.size(), vector<string>(rows.size(),""));  
+  int i = 0, j;
+  for (auto c : cols){
+    j = 0;
+    for (auto r: rows){
+      vector<int> intersect;
+      set_intersection(c.second.begin(), c.second.end(),
+		       r.second.begin(), r.second.end(), back_inserter(intersect));
+      for (int k = 0; k < intersect.size(); k++){
+	table[i][j] += text[intersect[k]];
+      }
+      j++;
     }    
-  }
-  return inside;
-}
-
-bool overlap(Rect r1, Rect r2){
-  vector<int> a = rect2vec(r1);
-  vector<int> b = rect2vec(r2);
-  return a[1] >= b[0] &&  a[0] <= b[1];
-}
-
-//IMPROVEMENT
-//do binary search instead of linear search
-int index_below(vector<Rect> rv, Rect r){
-  vector<int> a = rect2vec(r);
-  for (int i = 0; i < rv.size(); i++){
-    vector<int> b = rect2vec(rv[i]);
-    if (b[2] > a[3])
-      return i;
-  }
-  return -1;
-}
-
-int index_inside_y(vector<Rect> v, Rect r){
-  for (int i = 0; i < v.size(); i++){
-    if (v[i].y <= r.y && v[i].br().y >= r.br().y)
-      return i;    
-  }
-  return -1;
-}
-
-//IMPROVEMENT
-//Inneficient to use vector here. Should use list or other structure
-vector<int> split_up(vector<Rect> tb, vector<Rect> rows, Rect bb){
-  vector<Rect> ibb = inside(tb, bb);
-  for (int i = 0; i < tb.size(); i++){
-    int index = index_below(ibb, ibb[i]);
-    int nogoodname = index_inside_y(rows, ibb[index]);
-    vector<int> tmp = {bb.x, bb.x+bb.width, rows[nogoodname].y, rows[nogoodname].br().y};
-    Rect r = vec2rect(tmp);    
-    vector<Rect> tbb = inside(tb, r);
-    int count = 0;
-    for (Rect e : tbb){
-      if (overlap(tb[i], e))
-	count++;      
-    }
-    if (count > 1){
-      cout << "Found box" << endl;
-      //TODO
-      //Remove boxes with too much overlap
-    }
-  }
-  return vector<int>();
-}
-
-//IMPROVEMENT
-//Remove outliers
-//Strip newlines from string here or elsewhere
-vector<vector<string> > find_grid(vector<Rect> bb, vector<string> text){
-  auto p = sort_permutation(bb, [](Rect const& a, Rect const& b){
-      if (a.y == b.y)
-	return a.x < b.x;
-      return a.y < b.y;
-    });
-  vector<string> sts = apply_permutation(text, p);  
-  vector<Rect> stb = apply_permutation(bb, p);
-  sort(bb.begin(), bb.end(), rectSortX());
-  vector<Rect> cols = overlapping(bb, 0);
-  sort(bb.begin(), bb.end(), rectSortY());
-  vector<Rect> rows = overlapping(bb, 2);
-  vector<vector<string> > table(cols.size(), vector<string>(rows.size(),""));
-  vector<int> xvec(cols.size());
-  for (int i = 0; i < cols.size(); i++){
-    xvec[i] = cols[i].tl().x;
-  }
-  vector<int> yvec(rows.size());
-  for (int i = 0; i < rows.size(); i++){
-    yvec[i] = rows[i].tl().y;
-  }
-  for (int i = 0; i < cols.size(); i++){
-    split_up(bb, rows, cols[i]);
-  }
-  for (int i = 0; i < sts.size(); i++){    
-    int x_index = bin_search(xvec, stb[i].tl().x);
-    int y_index = bin_search(yvec,stb[i].tl().y);
-    table[x_index][y_index] += sts[i];
-  }
+    i++;
+  }  
   return table;
-} 
+}

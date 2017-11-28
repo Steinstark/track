@@ -5,6 +5,7 @@
 #include "test_engine.hpp"
 #include "pugixml.hpp"
 #include "detect_table.hpp"
+#include "RTree.h"
 
 using namespace std;
 using namespace cv;
@@ -45,18 +46,41 @@ bool rectSort(){
   
 }
 
+bool callback(int id, void* arg){
+  vector<int>* v = static_cast<vector<int>*>( arg );
+  v->push_back(id);
+  return true;
+}
+
+bool isInside(const Rect& outer, const Rect& inner){
+  return outer.x <= inner.x &&
+    outer.y <= inner.y &&
+    outer.br().x >= inner.br().x &&
+    outer.br().y >= inner.br().y;
+}
+
 //TODO
-int compare(const vector<Rect>& gt, const vector<Rect>& d){
-  /*  sort(d.begin(), d.end(), [](const Rect& a, const Rect& b)
-       {
-	 if (a.x == b.x)
-	   return a.y < b.y;
-	 return a.x < b.y;
-       });
-  for (Rect r : gt){
-    if 
-    }*/
-  return 1;
+double compare(const vector<Rect>& gt, const vector<Rect>& d){
+  RTree<int, int, 2, float> tree;
+  int incorrect = 0;
+  int correct = 0;
+  for (int i = 0; i < gt.size(); i++){
+    Rect r = gt[i];
+    int tl[] = {r.x, r.y};
+    int br[] = {r.br().x, r.br().y};
+    tree.Insert(tl,br,i);    
+  }
+  for (Rect r : d){
+    int tl[] = {r.x, r.y};
+    int bl[] = {r.br().x, r.br().y};
+    vector<int> vec;
+    int hits = tree.Search(tl, bl, callback, (static_cast<void*>(&vec)));
+    if (hits == 1 && isInside(r, gt[vec[0]])){
+      correct++;
+    }else
+      incorrect++;
+  }
+  return (double)correct/(correct + incorrect);
 }
 
 
@@ -67,9 +91,8 @@ int main(int argc, char** argv){
     vector<Rect> gt = getGroundTruth(file);
     save(file+pdf, file+png);
     vector<Rect> d = detect_tables(file+png);
-    compare(gt, d);
+    cout << compare(gt, d) << endl;
   }
-  //  cout << stats << endl;
   return 0;
 }
 

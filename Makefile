@@ -28,3 +28,5 @@ detect_cell_exp: detect_cell_exp.cpp
 find_grid: find_grid.cpp
 	g++ -std=c++11 find_grid.cpp -o find_grid `pkg-config --cflags --libs opencv`
 
+testRTree: testRTree.cpp
+	g++ -std=c++11 testRTree.cpp -o testRTree -I./RTree

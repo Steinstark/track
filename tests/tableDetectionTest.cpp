@@ -17,6 +17,7 @@ const string png = ".png";
 
 //TODO
 //implement getGroundTruth
+
 vector<Rect> getGroundTruth(string file){
   xml_document doc;
   doc.load_file((file+xml).c_str());
@@ -40,9 +41,22 @@ vector<Rect> getGroundTruth(string file){
   return tables;
 }
 
+bool rectSort(){
+  
+}
+
 //TODO
 int compare(const vector<Rect>& gt, const vector<Rect>& d){
-  sort(d.begin(), d.end(), 
+  /*  sort(d.begin(), d.end(), [](const Rect& a, const Rect& b)
+       {
+	 if (a.x == b.x)
+	   return a.y < b.y;
+	 return a.x < b.y;
+       });
+  for (Rect r : gt){
+    if 
+    }*/
+  return 1;
 }
 
 

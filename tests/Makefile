@@ -1,5 +1,5 @@
-test_engine.o: test_engine.cpp
-	g++ -g -std=c++11 -c test_engine.cpp `Magick++-config --cxxflags --cppflags` `Magick++-config --ldflags --libs`
+test_engine.o: test_engine.cpp test_engine.hpp
+	g++ -g -std=c++11 -c test_engine.cpp `Magick++-config --cxxflags --cppflags` `Magick++-config --ldflags --libs` -I../RTree
 
 test: test.cpp test_engine.o
 	g++ -g -std=c++11 test_engine.o test.cpp -o test -lboost_system -lboost_filesystem

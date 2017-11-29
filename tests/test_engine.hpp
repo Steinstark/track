@@ -4,14 +4,22 @@
 #include <string>
 #include <opencv2/opencv.hpp>
 
-//TODO
-//implement files_in_folder
-//implement Stats
-//implement compare
+const std::string xml = "-str.xml";
+const std::string pdf = ".pdf";
+const std::string png = ".png";
+
 std::vector<std::string> files_in_folder(std::string path);
-//Stats compare(cv::Rect a, cv::Rect b);
+
 cv::Rect translate(std::string pdf, cv::Rect bb);
+
+double compare(const std::vector<cv::Rect >& gt, const std::vector<cv::Rect >& d);
+
 int save(std::string in, std::string out);
+
+void getGroundTruth(std::string file,
+		    std::vector<std::vector<cv::Rect> >& table_regions,
+		    std::vector<std::vector<cv::Rect> >& cells,
+		    std::vector<std::string>& text);
 
 
 #endif

@@ -76,7 +76,7 @@ std::vector<Rect> detect_cells(string filename, Rect r){
 
   for (size_t i = 0; i < contours.size(); i++){
     approxPolyDP( Mat(contours[i]), contours_poly[i], 3, true);
-    boundRect[i] = boundingRect( Mat(contours_poly[i]));
+    boundRect[i] = boundingRect( Mat(contours_poly[i])) + r.tl();
   }
   Mat drawing = Mat::zeros(masked.size(), CV_8UC3 );
   RNG rng(12345);
@@ -85,7 +85,7 @@ std::vector<Rect> detect_cells(string filename, Rect r){
     drawContours(drawing,contours_poly, (int)i, color, 1,8, vector<Vec4i>(), 0, Point() );
     rectangle(rsz, boundRect[i].tl(), boundRect[i].br(), color, 2,8,0);
   }
-  imshow("img", rsz);
-  waitKey(0);
+  //imshow("img", rsz);
+  //waitKey(0);
   return boundRect;
 }

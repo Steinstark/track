@@ -1,48 +1,41 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <sstream>
 #include "test_engine.hpp"
 #include "textbox_ocr.hpp"
 
 using namespace std;
 using namespace cv;
 
-//TODO
-//implement getGroundTruth
+using vvr = vector<vector<Rect> >;
 
-using vector<pair<Rect,string> > = Zip;
-
-vector<string> getGroundTruth(string file){
-  ifstream ifs(file);
-  string xml;
-  ifs >> xml;
-  //for each textbox
-  //get goordinate and content
-  //translate the coordinate
-  //put coordinates in a map linking to content
-  //sorted based on x first and y second
-
+int textCompare(const vector<string>& d, const vector<string>& gt, int a, int b){
+  return 1;
 }
 
 int main(int argc, char** argv){
   vector<string> files = files_in_folder(string(argv[1]));
-  int c, tc;
   for (string file : files){
-    Zip gt = getGroundTruth(file);
-    vector<string> tgt;
-    vector<Rect> rgt;
-    for (auto p : gt){
-      tgt.push_back(p.first);
-      rgt.push_back(p.second);
+    vvr tables, cells;
+    vector<string> text;
+    getGroundTruth(file, tables, cells, text);
+    save(file+pdf, file+png);
+    int index = 0, l = 0, r = 0;
+    for (int i = 0; i < tables.size(); i++){
+      vector<Rect> cellsOnPage;
+      stringstream ss;
+      ss << file << "_" << i << png;
+      for (int j = 0; j < tables[i].size(); j++){
+	r+= cells[index].size();
+	cellsOnPage.insert(end(cellsOnPage), begin(cells[index]), end(cells[index]));
+	index++;
+      }
+      vector<string> content = textbox_content(ss.str(), cellsOnPage);
+      cout << textCompare(content, text, l, r-1);
+      l = r;
     }
-    vector<string> m = textbox_content(path, rgt);
-    int correct = 0;
-    for (int i = 0; i < tgt.size(); i++){
-      if (tgt[i] == m[i])
-	count++;
-    }
-    tc += tgt.size();
+      
   }
-  double recall = c/tc
-  cout << "OCR recall: " << recall << endl;
+  return 0;
 }

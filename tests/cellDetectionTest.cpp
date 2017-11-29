@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <sstream>
 #include "test_engine.hpp"
 #include "detect_cell.hpp"
 
@@ -18,12 +19,11 @@ int main(int argc, char** argv){
     save(file+pdf, file+png);
     int index = 0;
     for (int i = 0; i < tables.size(); i++){
+      stringstream ss;
+      ss << file << "_" << i << png;
       for (int j = 0; j < tables[i].size(); j++){
-	stringstream ss;
-	ss << file << "_" << i << png;
 	vector<Rect> d = detect_cells(ss.str(),tables[i][j]);
-	cout << compare(cells[index], d) << endl;
-	index++;
+	cout << compare(cells[index++], d) << endl;
       }
     }
   }

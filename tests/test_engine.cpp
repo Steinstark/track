@@ -3,6 +3,8 @@
 #include <vector>
 #include <set>
 #include <iostream>
+#include <sstream>
+#include <iomanip>
 #include <boost/filesystem.hpp>
 #include <opencv2/opencv.hpp>
 #include <Magick++.h>
@@ -42,14 +44,22 @@ vector<string> files_in_folder(string dir){
 }
 
 Rect translate(string pdf, Rect bb){
-  InitializeMagick(NULL);  
+  InitializeMagick(NULL);
+  int height = 0;
   Image img(pdf);
-  int height = img.rows();
+  height = img.rows();
   return Rect(bb.x, height - bb.y, bb.width, bb.height); 
 }
 
-void save(string in, string out){
-  InitializeMagick(NULL);  
-  Image img(in);
-  img.write(out);
+int save(string in, string out){
+  InitializeMagick("--quiet");
+  vector<Image> imageList;
+  readImages(&imageList, in);
+  int index = out.find_last_of(".");
+  for (int i = 0; i < imageList.size(); i++){    
+    ostringstream oss;
+    oss << out.substr(0, index) << "_" << i << out.substr(index);
+    imageList[i].write(oss.str());
+  }  
+  return imageList.size();
 }

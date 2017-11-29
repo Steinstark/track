@@ -11,7 +11,7 @@
 std::vector<std::string> files_in_folder(std::string path);
 //Stats compare(cv::Rect a, cv::Rect b);
 cv::Rect translate(std::string pdf, cv::Rect bb);
-void save(std::string in, std::string out);
+int save(std::string in, std::string out);
 
 
 #endif

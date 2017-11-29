@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <sstream>
 #include <opencv2/opencv.hpp>
 #include "test_engine.hpp"
 #include "pugixml.hpp"
@@ -19,12 +20,19 @@ const string png = ".png";
 //TODO
 //implement getGroundTruth
 
-vector<Rect> getGroundTruth(string file){
+vector<vector<Rect> > getGroundTruth(string file){
   xml_document doc;
   doc.load_file((file+xml).c_str());
   xpath_node_set rns = doc.select_nodes("//region");
-  vector<Rect> tables;
+  vector<vector<Rect> > tables;
+  vector<Rect> page;
+  int page_index = 1;
   for (xpath_node rn : rns){
+    while (rn.node().attribute("page").as_int() > page_index){
+      tables.push_back(page);
+      page.clear();
+      page_index++;
+    }
     int left = inf, right = -inf , top = -inf, bottom = inf;
     xpath_node_set bns = rn.node().select_nodes("cell/bounding-box");
     for (xpath_node bn : bns){
@@ -37,13 +45,10 @@ vector<Rect> getGroundTruth(string file){
       bottom = min(bottom, b);
       top = max(top, t);
     }
-    tables.push_back(translate(file+pdf, Rect(left, top, right-left, top-bottom)));
+    page.push_back(translate(file+pdf, Rect(left, top, right-left, top-bottom)));
   }
+  tables.push_back(page);
   return tables;
-}
-
-bool rectSort(){
-  
 }
 
 bool callback(int id, void* arg){
@@ -80,6 +85,8 @@ double compare(const vector<Rect>& gt, const vector<Rect>& d){
     }else
       incorrect++;
   }
+  if (correct + incorrect == 0)
+    return 1;
   return (double)correct/(correct + incorrect);
 }
 
@@ -88,10 +95,14 @@ int main(int argc, char** argv){
   vector<string> files = files_in_folder(string(argv[1]));
   vector<Rect> d;
   for (string file : files){
-    vector<Rect> gt = getGroundTruth(file);
+    vector<vector<Rect> > gt = getGroundTruth(file);
     save(file+pdf, file+png);
-    vector<Rect> d = detect_tables(file+png);
-    cout << compare(gt, d) << endl;
+    for (int i = 0; i < gt.size(); i++){
+      stringstream ss;
+      ss << file << "_" << i << png;
+      vector<Rect> d = detect_tables(ss.str());
+      cout << compare(gt[i], d) << endl;
+    }
   }
   return 0;
 }

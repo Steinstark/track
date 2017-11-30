@@ -24,6 +24,7 @@ cellDetectionTest: cellDetectionTest.cpp pugixml.o test_engine.o detect_cell.o
 	g++ -g -std=c++11 pugixml.o test_engine.o detect_cell.o cellDetectionTest.cpp -o cellDetectionTest -lboost_system -lboost_filesystem `pkg-config --cflags --libs opencv` `Magick++-config --cxxflags --cppflags` `Magick++-config --ldflags --libs` -I../ -I../RTree
 
 ocrTest: ocrTest.cpp test_engine.o textbox_ocr.o
-	g++ -g -std=c++11 pugixml.o test_engine.o textbox_ocr.o ocrTest.cpp -o ocrTest -lboost_system -lboost_filesystem `pkg-config --cflags --libs opencv` `Magick++-config --cxxflags --cppflags` `Magick++-config --ldflags --libs` -I../ -I../RTree
+	g++ -g -std=c++11 pugixml.o test_engine.o textbox_ocr.o ocrTest.cpp -o ocrTest -lboost_system -lboost_filesystem `pkg-config --cflags --libs opencv` `Magick++-config --cxxflags --cppflags` `Magick++-config --ldflags --libs` -I../ -I../RTree -lleptonica -ltesseract
+
 translate: translate.cpp
 	g++ -g -std=c++11 translate.cpp -o translate `Magick++-config --cxxflags --cppflags` `Magick++-config --ldflags --libs`

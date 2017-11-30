@@ -130,7 +130,7 @@ void getGroundTruth(string file, vvr& table_regions, vvr& cells, vector<string>&
       int r = bn.node().attribute("x2").as_int();
       int b = bn.node().attribute("y1").as_int();      
       int t = bn.node().attribute("y2").as_int();
-      text.push_back(bn.node().next_sibling("content").value());
+      text.push_back(bn.node().parent().child_value("content"));
       table.push_back(translate(height, Rect(l, t, r-l,t-b)));
       left = min(left, l);
       right = max(right, r);

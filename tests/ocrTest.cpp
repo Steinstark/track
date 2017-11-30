@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <algorithm>
 #include "test_engine.hpp"
 #include "textbox_ocr.hpp"
 
@@ -10,8 +11,13 @@ using namespace cv;
 
 using vvr = vector<vector<Rect> >;
 
-int textCompare(const vector<string>& d, const vector<string>& gt, int a, int b){
-  return 1;
+double textCompare(const vector<string>& d, const vector<string>& gt, int a, int b){
+  int count = 0;
+  for (int i = 0; i < d.size(); i++){
+    if (d[i] == gt[i])
+      count++;
+  }
+  return (double)count/gt.size();
 }
 
 int main(int argc, char** argv){
@@ -32,7 +38,7 @@ int main(int argc, char** argv){
 	index++;
       }
       vector<string> content = textbox_content(ss.str(), cellsOnPage);
-      cout << textCompare(content, text, l, r-1);
+      cout << textCompare(content, text, l, r-1) << endl;
       l = r;
     }
       

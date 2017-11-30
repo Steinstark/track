@@ -4,6 +4,6 @@
 #include <vector>
 #include <opencv2/opencv.hpp>
 
-std::vector<std::string> textbox_content(std::string path, cv::Rect table, std::vector<cv::Rect> rv);
+std::vector<std::string> textbox_content(std::string path, const std::vector<cv::Rect>& rv);
 
 #endif

@@ -19,10 +19,6 @@ using namespace pugi;
 
 using vvr = vector<vector<Rect> >;
 
-//TODO
-//implement files_in_folder
-//implement compare
-
 string remove_extension(const string& file){
   size_t lastdot = file.find_last_of(".");
   if (lastdot == string::npos) return file;

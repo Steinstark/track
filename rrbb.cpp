@@ -2,36 +2,52 @@
 #include <algorithm>
 
 #include "detect_table.hpp"
-
+#include "RTree.h"
 
 using namespace std;
 using namespace cv;
 
-
-Mat color2gray(const Mat& img){
-  Mat gray;
-  if (img.channesl() == 3)
-    cvtColor(img, gray, CV_BG2GRAY);
-  else
-    gray = img;
-  return gray;
-}
-
 double getRatio(Rect r){
-  return min(r.wdith, r.height)/max(r.width, r.height);
+  return (double)min(r.width, r.height)/max(r.width, r.height);
 }
 
-int getOverlapCount(){
-  return 0;
+void getOverlapCount(const vector<Rect>& bb,
+			    vector<int>& overlap,
+			    vector<int>& onRow,
+			    vector<int>& onCol){
+  const int inf = 1000000;
+  RTree<int, int, 2, float> tree;
+  for (int i = 0; i < bb.size(); i++){
+    int tl[] = {bb[i].x, bb[i].y};
+    int br[] = {bb[i].br().x, bb[i].br().y};
+    tree.Insert(tl, br, i);
+  }
+  for (int i = 0; i < bb.size(); i++){
+    int tl[] = {bb[i].x, bb[i].y};
+    int br[] = {bb[i].br().x, bb[i].br().y};
+    int count = tree.Search(tl, br, NULL, NULL);
+    overlap.push_back(count-1);
+    tl[0] = -inf;
+    br[0] = inf;
+    count = tree.Search(tl,br, NULL, NULL);
+    onRow.push_back(count-1);
+    tl[0] = bb[i].x;
+    tl[1] = -inf;
+    br[0] = bb[i].br().x;
+    br[1] = inf;
+    count = tree.Search(tl, br, NULL, NULL);
+    onCol.push_back(count-1);    
+  }
 }
 
 void recursiveFilter(Rect r){
   
 }
-
+/*
 bool isHomogenous(Stats stats){
   
 }
+*/
 
 void homogenityStats(){
   Mat src;
@@ -43,15 +59,16 @@ void homogenityStats(){
 }
     
 vector<Rect> homogenitySplit(Rect r){
-  auto stats = homogenityStats(r);
-  if (isHomogenous(stats))    
-    return r;
-  vector<Rect>  srv = split(r, stats);
-  vector<Rect> v0 = homogenitySplit(srv[0]);
-  vector<Rect> v1 = homogenitySplit(srv[1]);
-  vector<Rect>  ret;
-  ret.insert(v0.begin(), v0.end());
-  ret.insert(v1.begin(), v1.end());
+  vector<Rect> ret;
+  //auto stats = homogenityStats(r);
+  //  if (isHomogenous(stats))    
+  //  return r;
+  //  vector<Rect>  srv = split(r, stats);
+  //vector<Rect> v0 = homogenitySplit(srv[0]);
+  //vector<Rect> v1 = homogenitySplit(srv[1]);
+  //vector<Rect>  ret;
+  //ret.insert(v0.begin(), v0.end());
+  //ret.insert(v1.begin(), v1.end());
   return ret;
 }
 
@@ -63,68 +80,74 @@ Mat gray2binary(const Mat& gray){
   return bw;
 }
 
-vector<int> heuristic_filter(Mat& in, Mat& out, Mat& stats ){
-  vector<Rect> bb;
-  vector<int> areas;
-  vector<double> density;
-  vector<int> overlap;
-  vector<int> onRow;
-  vector<int> onCol;
-  vector<double> hwratio;
-  //TODO
-  //get stats of number of overlapping boundingboxes for each component
-  //might be possible to do efficiently with an r-tree. This should prob
-  //been mentioned in the original article  
+vector<int> heuristic_filter(Mat& in, Mat& labels, Mat& stats ){
+  int nLabels = stats.rows;
+  vector<Rect> bb(nLabels);
+  bb[0] = Rect(-1, -1, 0, 0);
+  vector<int> areas(nLabels);
+  vector<double> density(nLabels);
+  vector<double> hwratio(nLabels);
   for (int i = 1; i < nLabels; i++){
     int left = stats.at<int>(i, CC_STAT_LEFT);
     int top = stats.at<int>(i, CC_STAT_TOP);
     int width = stats.at<int>(i, CC_STAT_WIDTH);
     int height = stats.at<int>(i, CC_STAT_HEIGHT);
-    bb.push_back(Rect(left, top, width, height));
-    areas.push_back(stats.at<int>(i, CC_STAT_AREA));
-    hwratio(getRatio(bb[i]));
-    density.push_back(areas[i-1]/bb[i-1].area());
-    overlap.push_back(getOverlapCount());
-    onRow.push_back(getOverlapCount());
-    onCol.push_back(getOverlapCount());
+    bb[i] = Rect(left, top, width, height);
+    areas[i] = stats.at<int>(i, CC_STAT_AREA);
+    hwratio[i] = getRatio(bb[i]);
+    density[i] = (double)areas[i]/bb[i].area();    
   }
+  vector<int> onRow;
+  vector<int> onCol;
+  vector<int> overlap;
+  getOverlapCount(bb, overlap, onRow, onCol);
+
   vector<int> text;
   vector<int> nontext;
-  for (int i = 0; i < nLabels; i++){
+  for (int i = 1; i < nLabels; i++){
     if (areas[i] < 6 ||
 	overlap[i] > 4 ||
-	density[i] < 0.06 ||
-	(hwratio[i] < 0.06 && bb[i].width > bb[i].height))
+	(hwratio[i] < 0.06 && bb[i].width > bb[i].height) ||      
+	density[i] < 0.06){
       nontext.push_back(i);
+    }
     else
       text.push_back(i);
   }
-
+  Mat mask(labels.size(), CV_8UC1, Scalar(0));
   for (int i = 0; i <  nontext.size(); i++){
-    compare(labels, nontext[i], bw, CMP_EQ);
+    mask = mask | (labels==nontext[i]);
   }
+  imshow("mask", mask);
+  waitKey(0);
+  Mat res(in.size(), CV_8UC1, Scalar(0));
+  in.copyTo(res, ~mask);
+  imshow("Res", res);
+  waitKey(0);
+  return text;
 }
 
 void mla(){
-  vector<Rect> homboxes = homogenitySplit();
+  /* vector<Rect> homboxes = homogenitySplit();
   for (int i = 0; i < homboxes.size(); i++){
     recursive_filter(homboxes[i]);
-  }
+    }*/
 }
 
-Rect detect_tables(string filename){
-  Mat img = imread(filename.c_str());  
+vector<Rect> detect_tables(string filename){
+  Mat img = imread(filename.c_str(), IMREAD_GRAYSCALE);  
   if (!img.data)
     cerr << "Problem loading image. " << endl;
-  Mat bw = gray2binary(color2gray(img));
+  Mat bw = gray2binary(img);
   Mat cc;
   Mat stats;
   Mat centroids;
-  nLabels = connectedComponentstWithStats(bw, cc, stats, centroids, 8, CV_32S);
-  heuristic_filter(bw, bw, stats);
-  mla();
-  noise_removal(bw);
+  int nLabels = connectedComponentsWithStats(bw, cc, stats, centroids, 8, CV_32S);
+  heuristic_filter(bw, cc, stats);
+  //mla();
+  //noise_removal(bw);
 }
+
  main(int argc, char** argv){
   detect_tables(string(argv[1]));
 }

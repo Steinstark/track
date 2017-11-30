@@ -30,3 +30,6 @@ find_grid: find_grid.cpp
 
 testRTree: testRTree.cpp
 	g++ -std=c++11 testRTree.cpp -o testRTree -I./RTree
+
+rrbb: rrbb.cpp
+	g++ -g -std=c++11 rrbb.cpp -o rrbb -I./RTree `pkg-config --cflags --libs opencv`

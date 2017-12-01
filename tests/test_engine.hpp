@@ -7,6 +7,7 @@
 const std::string xml = "-str.xml";
 const std::string pdf = ".pdf";
 const std::string png = ".png";
+const std::string tiff = ".tiff";
 
 std::vector<std::string> files_in_folder(std::string path);
 

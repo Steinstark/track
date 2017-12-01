@@ -16,10 +16,10 @@ int main(int argc, char** argv){
     vvr gt, cells;
     vector<string> text;
     getGroundTruth(file, gt, cells, text);
-    save(file+pdf, file+png);
+    save(file+pdf, file+tiff);
     for (int i = 0; i < gt.size(); i++){
       stringstream ss;
-      ss << file << "_" << i << png;
+      ss << file << "_" << i << tiff;
       vector<Rect> d = detect_tables(ss.str());
       cout << compare(gt[i], d) << endl;
     }

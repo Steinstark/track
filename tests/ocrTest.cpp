@@ -26,12 +26,12 @@ int main(int argc, char** argv){
     vvr tables, cells;
     vector<string> text;
     getGroundTruth(file, tables, cells, text);
-    save(file+pdf, file+png);
+    save(file+pdf, file+tiff);
     int index = 0, l = 0, r = 0;
     for (int i = 0; i < tables.size(); i++){
       vector<Rect> cellsOnPage;
       stringstream ss;
-      ss << file << "_" << i << png;
+      ss << file << "_" << i << tiff;
       for (int j = 0; j < tables[i].size(); j++){
 	r+= cells[index].size();
 	cellsOnPage.insert(end(cellsOnPage), begin(cells[index]), end(cells[index]));

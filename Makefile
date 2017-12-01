@@ -1,5 +1,5 @@
 test: test.cpp
-	g++ -g -std=c++11 test.cpp -o test `Magick++-config --cxxflags --cppflags` `Magick++-config --ldflags --libs` `pkg-config --cflags --libs opencv`   -lleponica -ltesseract
+	g++ -g -std=c++11 test.cpp -o test `Magick++-config --cxxflags --cppflags` `Magick++-config --ldflags --libs` `pkg-config --cflags --libs opencv`   -lleptonica -ltesseract
 
 detect_table.o: detect_table.cpp
 	g++ -g -std=c++11 -c detect_table.cpp

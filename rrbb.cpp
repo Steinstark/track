@@ -1,5 +1,6 @@
 #include <vector>
 #include <algorithm>
+#include <queue>
 
 #include "detect_table.hpp"
 #include "RTree.h"
@@ -50,17 +51,18 @@ bool isExtrema(double a, double b){
   return (a < 0 && b > 0) || (a > 0 && b < 0);
 }
 
-double homogenity_stats(Mat& bw, Mat& sob, Mat& delta){
+double homogenity_stats(Mat& bw, Mat& hist){
   Mat red;
   int s = 5;
   //histogram
   int scale = 255;
-  reduce(bw, red, 1, CV_REDUCE_SUM, CV_64F);
-  Mat sred = red / scale;  
+  reduce(bw, hist, 1, CV_REDUCE_SUM, CV_64F);
+  Mat sred = hist / scale;  
   Mat blurred;
   //medelkernel 
   blur(sred, blurred, Size(1,30));  
   //gradienten
+  Mat sob;
   Scharr(blurred, sob, -1, 0, 1);
   vector<int> a0;  
   for (int i = 1; i < sob.rows ; i++){
@@ -73,31 +75,67 @@ double homogenity_stats(Mat& bw, Mat& sob, Mat& delta){
   for (int i = 1; i < a0.size(); i++){
     a1.push_back(a0[i] - a0[i-1]);
   }
-  delta = Mat(a0.size()-1, 1, CV_32S, a1.data());
+  Mat delta = Mat(a0.size()-1, 1, CV_32S, a1.data());
   Mat mean, stddev;
   meanStdDev(delta, mean, stddev);
   double st = stddev.at<double>(0,0);
   return st*st;
 }
 
-//TODO
-//implement
-void split_block(const vector<int>& pos, const vector<int>& neg){
-  sort(pos.begin(), pos.end());
-  sort(neg.begin(), neg.end());
-  maxp = pos[pos.size()-1];
-  maxn = neg[neg.size()-1];
-  medianPos = median(pos);
-  medianNeg = median(neg);
+double getMedian(const vector<Rect> v){
+  int mid = v.size()/2;
+  if (v.size() % 2)
+    return (v[mid].height +v[mid+1].height)/2.0;
+  return v[mid+1].height;      
+}
+
+void findLines(const Mat& hist, vector<Rect>& text, vector<Rect>& space){
+  int t = 0;
+  for (int i = 1; i < hist.rows; i++){
+    if (hist.at<double>(i,0) > 0 && hist.at<double>(i-1,0) == 0){
+      space.push_back(Rect(0, t, 0, i-t-1));
+      t = i;
+    }
+    else if (hist.at<double>(i,0) == 0 && hist.at<double>(i-1,0) > 0){
+      text.push_back(Rect(0, t, 0, i-t-1));
+      t = i;
+    }
+  }
+  int index = hist.rows - 1;
+  double last = hist.at<double>(index, 0);
+  if (t != index){
+    if (last) text.push_back(Rect(0,t,0, index-t));
+    else space.push_back(Rect(0, t, 0, index-t));
+  }
+  
+}
+
+//IMPROVEMENT
+//split at midspace of prev and next for text instead of end
+void split_block(const Mat& hist, queue<Rect>& q, Rect r){
+  vector<Rect> text;
+  vector<Rect> space;
+  findLines(hist, text, space);
+  sort(text.begin(), text.end(), [](Rect l, Rect r){return l.height < r.height;});
+  sort(space.begin(), space.end(), [](Rect l, Rect r){return l.height < r.height;});
+  int maxt = text.back().height;
+  int maxs = space.back().height;  
+  double medianText = getMedian(text);
+  double medianSpace = getMedian(space);
   int splitPos;
-  if (maxp > medianPos)
-    ;
-  else if (maxn > medianNeg)
-    ;
+  if (maxs > medianSpace){
+    Rect a0 = space.back();
+    splitPos = a0.y +a0.height/2;
+    q.push(Rect(r.x, r.y, r.width, splitPos-r.y));
+    q.push(Rect(r.x, splitPos+1, r.width, r.br().y));
+  }
+  else if (maxt > medianText){
+    q.push(Rect(r.x,r.y, r.width, space.back().y - r.y-1));
+    q.push(Rect(r.x, space.back().y, r.width, space.back().height));
+    q.push(Rect(r.x, space.back().br().y+1, r.width, r.br().y-space.back().br().y-1));
+  }
   else
     ;//EXPLODE
-
-  
   return;
 }
 
@@ -114,12 +152,13 @@ vector<Rect> homogenous_regions(const Mat& img){
   while(!q.empty()){
     Rect r = q.front();
     q.pop();
-    Mat block = img(r), grad, delta;    
-    if (homogenity_stats(block, grad, delta) > varmax)
-      split_block();
+    Mat block = img(r), hist;    
+    if (homogenity_stats(block, hist) > varmax)
+      split_block(hist, q, r);
   }
-
 }
+
+
 
 
 
@@ -174,15 +213,13 @@ vector<int> heuristic_filter(Mat& in, Mat& labels, Mat& stats, Mat& textimg, Mat
   }
   nontextimg = Mat(in.size(), CV_8UC1, Scalar(0));
   in.copyTo(nontextimg, ~mask);
-  imshow("text", text);
-  waitKey(0);
   return text;
 }
 
 void mla(const Mat& img){
   vector<Rect> homboxes = homogenous_regions(img);
   for (int i = 0; i < homboxes.size(); i++){
-    //recursive_filter(homboxes[i]);
+    //  recursive_filter(homboxes[i]);
   }
 }
 
@@ -200,6 +237,8 @@ vector<Rect> detect_tables(string filename){
   int nLabels = connectedComponentsWithStats(bw, cc, stats, centroids, 8, CV_32S);
   Mat text, nontext;
   heuristic_filter(bw, cc, stats,text, nontext);
+  imshow("text", text);
+  waitKey(0);
   mla(text);
   //noise_removal(bw);
 }

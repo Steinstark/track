@@ -68,13 +68,13 @@ struct ABRect{
   ABRect(Rect r, int a, int b): r(r),a(a), b(b){}
 };
 
-ABRect getABRect(const vector<Rect>& v, int i){
+ABRect getABRect(const vector<Rect>& v, int i, function<int(Rect)> getVal, function<int(Point)> pointVal){
   int a = 0, b = 0;
   if (i != 0){
-    a = v[i].y - v[i-1].br().y;
+    a = getVal(v[i]) -  pointVal(v[i-1].br());
   }
   if (i != v.size()-1){
-    b = v[i+1].y - v[i].br().y;
+    b = getVal(v[i+1]) - pointVal(v[i].br());
   }
   return ABRect(v[i], a, b);
 }
@@ -112,12 +112,14 @@ void split_block(const Mat& hist, queue<Rect>& q, vector<Rect>& v, Rect r, int d
   function<bool(Rect, Rect)> sortRect;
   function<int(const Rect&)> getLength;
   function<int(Rect)> getVal;
+  function<int(Point)> pointVal;
   if (dim == 0){
     createRect1 = [&r](int low, int high){return Rect(r.x+low, r.y, high-low,r.height);};
     createRect2 = [&r](int low, int high){return Rect(low, r.y, high-low,r.height);};
     sortRect = [](const Rect& a, const Rect& b){return a.width < b.width;};
     getLength = [](Rect a){return a.width;};
     getVal = [](Rect a){return a.x;};
+    pointVal = [](Point p){return p.x;};
   }
   else{
     createRect1 = [&r](int low, int high){return Rect(r.x, r.y+low, r.width, high-low);};
@@ -125,6 +127,7 @@ void split_block(const Mat& hist, queue<Rect>& q, vector<Rect>& v, Rect r, int d
     sortRect = [](const Rect& a, const Rect& b){return a.height < b.height;};
     getLength = [](const Rect& a){return a.height;};
     getVal = [](Rect a){return a.y;};
+    pointVal = [](Point p){return p.y;};
   }
   vector<Rect> text;
   vector<Rect> space;
@@ -136,7 +139,7 @@ void split_block(const Mat& hist, queue<Rect>& q, vector<Rect>& v, Rect r, int d
   }
   vector<ABRect> a1;
   for (int i = 0; i < text.size(); i++){
-    a1.push_back(getABRect(text, i));
+    a1.push_back(getABRect(text, i, getVal, pointVal));
   }
   sort(a1.begin(), a1.end(), [&sortRect](ABRect l, ABRect r){return sortRect(l.r, r.r);});
   sort(space.begin(), space.end(), sortRect);

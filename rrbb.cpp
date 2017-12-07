@@ -72,8 +72,8 @@ double homogenity_stats(Mat& bw, Mat& hist){
   int s = 30;
   //histogram
   int scale = 255;
-  imshow("img", bw);
-  waitKey(0);
+  //  imshow("img", bw);
+  //  waitKey(0);
   reduce(bw, hist, 1, CV_REDUCE_SUM, CV_64F);
   Mat sred = hist / scale;  
   Mat blurred;
@@ -214,7 +214,7 @@ void split_block(const Mat& hist, queue<Rect>& q, Rect r){
   else if (mint < medianText){
     ABRect a0 = a1[0];
     split_text(q, a0, r);
-nn  }else
+  }else
     cout << "Can't happen" << endl;
   return;
 }

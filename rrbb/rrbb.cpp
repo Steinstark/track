@@ -19,10 +19,12 @@ void recursiveFilter(Rect r){
 
 void mla(const Mat& img){
   vector<Rect> homboxes = homogenous_regions(img);
+  Mat boxes = img.clone();
   for (int i = 0; i < homboxes.size(); i++){
-    imshow("img", img(homboxes[i]));
-    waitKey(0);
+    rectangle(boxes, homboxes[i],Scalar(255));
   }
+  imshow("img", boxes);
+  waitKey(0);
 }
 
 Mat gray2binary(const Mat& gray){

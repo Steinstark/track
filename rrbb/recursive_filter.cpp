@@ -29,6 +29,15 @@ double median(const vector<int>& v){
   return (v[n/2-1] + v[n/2])/2;   
 }
 
+double mean(const vector<int>& v){
+  int m = 0; 
+  for (int i = 0; i < v.size(); i++){
+    m += v[i];
+  }
+  return m;
+}
+
+
 double k_calc(double mean, double med){
   return max(mean/med, med/mean);  
 }
@@ -38,16 +47,20 @@ void recursive_filter(const Mat& img){
   Mat cc, stats, centroids;
   int labels = connectedComponentsWithStats(img, cc, stats, centroids, 8, CV_32S);
   RTree<int, int, 2, float> tree;
-  vector<Rect> bb;
-  bb.push_back(Rect(-1,-1,0,0));
+  vector<Rect> bb(labels);
+  vector<int> areas(labels);
   for (int i = 1; i < labels; i++){
     int left = stats.at<int>(i, CC_STAT_LEFT);
     int top = stats.at<int>(i, CC_STAT_TOP);
     int width = stats.at<int>(i, CC_STAT_WIDTH);
     int height = stats.at<int>(i, CC_STAT_HEIGHT);
     bb[i] = Rect(left, top, width, height);
+    areas[i] = stats.at<int>(i, CC_STAT_AREA);
     insert2tree(tree, bb[i], i);
   }
+  Area
+  sort(
+  
   for (int i = 1; i < labels; i++){
     vector<int> ln;
     Rect lr(-inf, bb[i].y, bb[i].x, bb[i].height);

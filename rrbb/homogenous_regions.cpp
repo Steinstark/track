@@ -26,12 +26,12 @@ vector<Rect> split_rectangles(Rect r, const vector<int>& split, int dim){
   int end;
   if (dim){
     create = [&r](int a, int b){return Rect(r.x,r.y + a, r.width, b-a);};
-    end = r.width;
+    end = r.height;
   }else{
     create = [&r](int a, int b){return Rect(r.x+ a,r.y, b-a, r.height);};
-    end = r.height;
+    end = r.width;
   }
-  int a = 0, b;
+  int a = 0, b = 0;
   for (int i = 0; i < split.size(); i++){
     b = split[i];
     if (a != b)
@@ -69,21 +69,21 @@ void split_text(const vector<Line>& text, const vector<int>& text_perm, vector<i
 
 void split_space(const vector<Line>& space, const vector<int>& space_perm, vector<int>& split){
   int i = space_perm[0];
-  int val = space[i].l + space[i].length()/2;
-  split.push_back(val);
+  split.push_back(space[i].l);
+  split.push_back(space[i].r);
 }
 
 void find_lines(const Mat& hist, vector<Line>& text, vector<Line>& space){
   int length = max(hist.rows, hist.cols);
   int t = 0;
   for (int i = 1; i < length; i++){
-    if ((hist.at<double>(i) > 0 && hist.at<double>(i-1) == 0) ||
-	(hist.at<double>(i) && i == length-1)){
+    if ((hist.at<double>(i) && !hist.at<double>(i-1)) ||
+	(!hist.at<double>(i) && i == length-1)){
       space.push_back(Line(t,i));
       t = i;
     }
-    else if ((hist.at<double>(i) == 0 && hist.at<double>(i-1) > 0) ||
-	     !hist.at<double>(i) && i == length - 1){
+    else if ((!hist.at<double>(i)  && hist.at<double>(i-1)) ||
+	     (hist.at<double>(i) && i == length - 1)){
       text.push_back(Line(t,i));
       t = i;
     }
@@ -100,16 +100,18 @@ vector<int> split_block(const Mat& hist){
        [&text](int a, int b){return text[a].length() > text[b].length();});
   sort(space_perm.begin(), space_perm.end(),
        [&space](int a, int b){return space[a].length() > space[b].length();});
-  int maxs = space[space_perm[0]].length();
+  vector<int> split;
+  if (space.empty() || text.empty())
+    return split;
+  int maxs = space[space_perm[0]].length();  
   int maxt = text[text_perm[0]].length();
   double meds = getMedian<int>(space_perm, [&space](int a){return space[a].length();});
   double medt = getMedian<int>(text_perm, [&text](int a){return text[a].length();});
-  vector<int> split;
   if (maxs > meds){
     split_space(space, space_perm, split);
   }
   else if (maxt > medt){
-    split_text(text, text_perm, split);          
+    split_space(text, text_perm, split);          
   }			
   return split;
 }
@@ -164,8 +166,8 @@ vector<Rect> get_regions(const Mat& img, Rect bb, int dim){
     q.pop();
     Mat block = img(r), hist;
     double var = homogenity_stats(block, hist, dim);
-    if (var > varmax){
-      vector<int> split = split_block(hist);      
+    vector<int> split = split_block(hist);      
+    if (var > varmax && !split.empty()){
       vector<Rect> rvec = split_rectangles(r, split, dim);
       for (int i = 0; i < rvec.size(); i++)
 	q.push(rvec[i]);

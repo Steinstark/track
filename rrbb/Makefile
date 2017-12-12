@@ -9,4 +9,7 @@ rrbb: rrbb.cpp heuristic_filter.o homogenous_regions.o
 	g++ -g -std=c++11 rrbb.cpp -o rrbb heuristic_filter.o homogenous_regions.o -I../RTree -I../ `pkg-config --cflags --libs opencv`
 
 recursive_filter: recursive_filter.cpp
-	g++ -g -std=c++11 recursive_filter.cpp -o recursive_filter -I../RTree -I../ `pkg-config --cflags --libs opencv`
+	g++ -g -std=c++11 recursive_filter.cpp -o recursive_filter -I../RTree -I../ `pkg-config --cflags --libs opencv` -lboost_system
+
+multitest: multitest.cpp
+	g++ -g -std=c++11 multitest.cpp -o multitest -lboost_system

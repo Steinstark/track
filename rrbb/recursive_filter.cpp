@@ -2,11 +2,13 @@
 #include <opencv2/opencv.hpp>
 #include <set>
 #include <iostream>
+#include <iterator>
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/identity.hpp>
 #include <boost/multi_index/member.hpp>
 #include "RTree.h"
+#include "recursive_filter.hpp"
 
 using namespace std;
 using namespace cv;
@@ -66,7 +68,7 @@ void insert2tree(RTree<int, int, 2, float>& tree, const Rect& r, int i){
   tree.Insert(tl, br, i);
 }
 
-int search_tree(RTree<int, int, 2, float>& tree, Rect r, vector<int>& vec){
+int search_tree(RT& tree, Rect r, vector<int>& vec){
   int tl[] = {r.x, r.y};
   int br[] = {r.br().x, r.br().y};
   return tree.Search(tl, br, callback,(static_cast<void*>(&vec)));
@@ -81,62 +83,139 @@ vector<double> k_calc(vector<double> means, vector<double> medians){
   return k;
 }
 
-//TODO
-//implement
 int getMax(const vector<int>&v){
-  return 0;
+  int maxv = -1;
+  for (int i = 0; i < v.size(); i++){
+    if (v[i] > maxv)
+      maxv = v[i];
+  }
+  return maxv;
 }
 
-//TODO
-//implement
-vector<int> getSpace(const vector<SpaceNode>& v){
-  return vector<int>();
+vector<int> getSpace(const vector<SpaceNode>& space){
+  vector<int> v(space.size());
+  for (int i  = 0; i < space.size(); i++){
+    v.push_back(space[i].rc);
+  }
+  return v;
 }
 
-//TODO
-//implement
-vector<int> getRightCount(const vector<SpaceNode>& v){
-  return vector<int>();
+vector<int> getRightCount(const vector<SpaceNode>& space){
+  vector<int> v(v.size());
+  for (int i = 0; i  < space.size(); i++){
+    v.push_back(space[i].rnv.size());
+  }
+  return v;
 }
 
-//TODO
-//implement
-vector<int> getLeftCount(const vector<SpaceNode>& v){
-  return vector<int>();
+vector<int> getLeftCount(const vector<SpaceNode>& space){
+  vector<int> v(v.size());
+  for (int i = 0; i  < space.size(); i++){
+    v.push_back(space[i].lnv.size());
+  }
+  return v;
 }
 
 //TODO
 //implement median for a NodeDB
-vector<double> getMedians(NodeDB nodes){
-  vector<double>();
+vector<double> getMedians(NodeDB& nodes){
+  vector<double> median(3,0);
+  auto& av = nodes.get<0>();
+  auto& wv = nodes.get<1>();
+  auto& hv = nodes.get<2>();
+  size_t n = av.size();
+  int a = n/2;
+  int b = !(n % 2);  
+  auto ita = av.begin();
+  auto itw = wv.begin();
+  auto ith = hv.begin();
+  advance(ita,a);
+  advance(itw,a);
+  advance(ith,a);
+  median[0] += ita->a;
+  advance(ita, b);
+  median[0] += ita->a;
+  median[1] += itw->w;
+  advance(itw, b);
+  median[1] += itw->w;  
+  median[2] += ith->h;
+  advance(ith, b);
+  median[2] += ith->h;   
+  for (int i = 0; i < 3; i++){
+    median[i] = median[i]/2;
+  }
+  return median;
 }
 
 //TODO
 //implement mean for a NodeDB
-vector<double> getMeans(NodeDB nodes){
-  return vector<double>();
+vector<double> getMeans(NodeDB& nodes){
+  auto& iv = nodes.get<3>();
+  vector<double> mean(3,0);
+  int size = 0;
+  auto it = iv.begin();
+  for (auto it = iv.begin(); it != iv.end(); ++it){
+    mean[0] += it->a;
+    mean[1] += it->w;
+    mean[2] += it->h;
+    size++;
+  }
+  for (int i = 0; i < 3; i++){
+    mean[i]/size;
+  }
+  return mean;
 }
 
-//TODO
-//implement mean for a NodeDB
 double getMean(vector<int> v){
-  return 0;
+  double mean = 0;
+  for (int i = 0; i < v.size(); i++){
+    mean += v[i];
+  }
+  return mean/v.size();
 }
 
-//TODO
-//implement mean for a NodeDB
 double getMedian(vector<int> v){
-  return 0;
+  int n = v.size();
+  if (n % 2){
+    return v[n/2];
+  }
+  return (v[n/2] + v[n/2-1])/2;
 }
 
-SpaceNode create_space(RT& tree, const Rect& r){
-  return SpaceNode();
+//IMPROVEMENT
+//nonlinear search for closest neighbour
+SpaceNode create_space(RT& tree, const vector<Rect>& bb, int i){
+  int inf = 1000000;
+  SpaceNode sn;
+  sn.index = i;
+  Rect r = bb[i];
+  Rect leftRect(0, r.y, r.x, r.height);
+  Rect rightRect(r.br().x, r.y, inf, r.height);
+  search_tree(tree, leftRect, sn.lnv);
+  search_tree(tree, rightRect, sn.rnv);
+  int minws = inf;
+  for (int j = 0; j < sn.lnv.size(); j++){
+    int ind = sn.lnv[j];
+    int val = r.x-bb[ind].br().x;
+    if (val > 0 && val < minws)
+      minws = val;
+  }
+  sn.lc = minws;
+  minws = inf;
+  for (int j = 0; j < sn.lnv.size(); j++){
+    int ind = sn.rnv[j];
+    int val = bb[ind].x-r.br().x;
+    if (val > 0 && val < minws)
+      minws = val;
+  }
+  sn.rc = minws;
+  return sn;
 }
 
 vector<int> classify_elements(RT& tree, const vector<int>& se, vector<Rect> bb){
   vector<SpaceNode> space;
   for (int i = 0; i < bb.size(); i++){
-    SpaceNode sn= create_space(tree, bb[i]);
+    SpaceNode sn = create_space(tree, bb, i);
     space.push_back(sn);
   }
   vector<int> ws = getSpace(space);
@@ -227,10 +306,8 @@ vector<int> recursive_filter(const Mat& img, const Mat& stats){
   vector<int> se = suspected_elements(nodes);
   vector<int> ce = classify_elements(tree, se, bb);
   vector<int> me = minimum_median_filter(nodes);
-  return vector<int>();
-}
- 
-
-int main(){
-  
+  vector<int> v;
+  v.insert(v.end(), ce.begin(), ce.end());
+  v.insert(v.end(), me.begin(), me.end());
+  return v;
 }

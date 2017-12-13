@@ -59,34 +59,46 @@ vector<int> range(int l){
   return r;
 }
 
-void split_text(const vector<Line>& text, const vector<int>& text_perm, vector<int>& split){
+void split_text(const vector<Line>& text, const vector<Line>& space, const vector<int>& text_perm, vector<int>& split){  
+  if (space.empty()){
+    //should never happen if the program is working correctly
+    cout << "No space to split" << endl;
+    return;
+  }
+  if (text.size() < 2){
+    //should never happen if the program is working correctly
+    cout << "Not splitting single text region" << endl;
+    return;
+  }  
   int i = text_perm[0];  
   if (i > 0)
-    split.push_back(text[i-1].r + (text[i].l - text[i-1].r)/2);
-  if (i < text.size())
-    split.push_back(text[i].r + (text[i+1].l - text[i].r)/2);
+    split.push_back((space[i-1].l + space[i-1].r)/2);
+  else
+    split.push_back((space[i].l + space[i].r)/2);
 }
 
 void split_space(const vector<Line>& space, const vector<int>& space_perm, vector<int>& split){
   int i = space_perm[0];
-  split.push_back(space[i].l);
-  split.push_back(space[i].r);
+  split.push_back((space[i].l+space[i].r)/2);  
 }
+
 
 void find_lines(const Mat& hist, vector<Line>& text, vector<Line>& space){
   int length = max(hist.rows, hist.cols);
   int t = 0;
   for (int i = 1; i < length; i++){
-    if ((hist.at<double>(i) && !hist.at<double>(i-1)) ||
-	(!hist.at<double>(i) && i == length-1)){
-      space.push_back(Line(t,i));
+    if (!hist.at<double>(i-1) && hist.at<double>(i)){
       t = i;
     }
-    else if ((!hist.at<double>(i)  && hist.at<double>(i-1)) ||
-	     (hist.at<double>(i) && i == length - 1)){
+    else if (hist.at<double>(i-1) && !hist.at<double>(i)){
       text.push_back(Line(t,i));
-      t = i;
+      t = -1;
     }
+  }
+  if (t != -1)
+    text.push_back(Line(t,length-1));
+  for (int i = 1; i < text.size(); i++){
+    space.push_back(Line(text[i-1].r+1, text[i].l-1));
   }
 }
 	 
@@ -111,7 +123,7 @@ vector<int> split_block(const Mat& hist){
     split_space(space, space_perm, split);
   }
   else if (maxt > medt){
-    split_space(text, text_perm, split);          
+    split_text(text, space, text_perm, split);          
   }			
   return split;
 }
@@ -185,5 +197,11 @@ vector<Rect> homogenous_regions(const Mat& img){
     vector<Rect> tmp = get_regions(img, h[i], 0);
     regions.insert(regions.end(), tmp.begin(), tmp.end());
   }
+  Mat disp = img.clone();
+  for (int i = 0; i < regions.size(); i++){
+    rectangle(disp, regions[i], Scalar(255));
+  }
+  imshow("homogen", disp);
+  waitKey(0);
   return regions;
 }

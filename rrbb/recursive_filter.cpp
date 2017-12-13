@@ -101,7 +101,7 @@ vector<int> getSpace(const vector<SpaceNode>& space){
 }
 
 vector<int> getRightCount(const vector<SpaceNode>& space){
-  vector<int> v(v.size());
+  vector<int> v(space.size());
   for (int i = 0; i  < space.size(); i++){
     v.push_back(space[i].rnv.size());
   }
@@ -109,7 +109,7 @@ vector<int> getRightCount(const vector<SpaceNode>& space){
 }
 
 vector<int> getLeftCount(const vector<SpaceNode>& space){
-  vector<int> v(v.size());
+  vector<int> v(space.size());
   for (int i = 0; i  < space.size(); i++){
     v.push_back(space[i].lnv.size());
   }
@@ -123,7 +123,7 @@ vector<double> getMedians(NodeDB& nodes){
   auto& av = nodes.get<0>();
   auto& wv = nodes.get<1>();
   auto& hv = nodes.get<2>();
-  size_t n = av.size();
+  size_t n = nodes.size();
   int a = n/2;
   int b = !(n % 2);  
   auto ita = av.begin();
@@ -133,13 +133,15 @@ vector<double> getMedians(NodeDB& nodes){
   advance(itw,a);
   advance(ith,a);
   median[0] += ita->a;
-  advance(ita, b);
-  median[0] += ita->a;
   median[1] += itw->w;
-  advance(itw, b);
-  median[1] += itw->w;  
   median[2] += ith->h;
-  advance(ith, b);
+  if (b){
+    advance(ita, b);
+    advance(itw, b);
+    advance(ith, b);
+  }
+  median[0] += ita->a;
+  median[1] += itw->w;  
   median[2] += ith->h;   
   for (int i = 0; i < 3; i++){
     median[i] = median[i]/2;
@@ -189,8 +191,8 @@ SpaceNode create_space(RT& tree, const vector<Rect>& bb, int i){
   SpaceNode sn;
   sn.index = i;
   Rect r = bb[i];
-  Rect leftRect(0, r.y, r.x, r.height);
-  Rect rightRect(r.br().x, r.y, inf, r.height);
+  Rect leftRect(0, r.y, r.x-1, r.height);
+  Rect rightRect(r.br().x+1, r.y, inf, r.height);
   search_tree(tree, leftRect, sn.lnv);
   search_tree(tree, rightRect, sn.rnv);
   int minws = inf;
@@ -202,7 +204,7 @@ SpaceNode create_space(RT& tree, const vector<Rect>& bb, int i){
   }
   sn.lc = minws;
   minws = inf;
-  for (int j = 0; j < sn.lnv.size(); j++){
+  for (int j = 0; j < sn.rnv.size(); j++){
     int ind = sn.rnv[j];
     int val = bb[ind].x-r.br().x;
     if (val > 0 && val < minws)
@@ -251,7 +253,7 @@ bool isSuspected(NodeDB& nodes, const vector<double>& medians, const vector<doub
 
 vector<int> suspected_elements(NodeDB& nodes){
   vector<int> v;
-  while (1){
+  while (nodes.size()){
     vector<double> medians = getMedians(nodes);
     vector<double> means = getMeans(nodes);
     vector<double> k = k_calc(means, medians);
@@ -267,7 +269,7 @@ vector<int> suspected_elements(NodeDB& nodes){
 
 vector<int> minimum_median_filter(NodeDB& nodes){
   vector<int> v;
-  while (1){
+  while (nodes.size()){
     vector<double> medians = getMedians(nodes);
     vector<double> means = getMeans(nodes);
     vector<double> k = k_calc(means, medians);
@@ -308,6 +310,6 @@ vector<int> recursive_filter(const Mat& img, const Mat& stats){
   vector<int> me = minimum_median_filter(nodes);
   vector<int> v;
   v.insert(v.end(), ce.begin(), ce.end());
-  v.insert(v.end(), me.begin(), me.end());
+  //v.insert(v.end(), me.begin(), me.end());
   return v;
 }

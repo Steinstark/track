@@ -16,3 +16,6 @@ recursive_filter: recursive_filter.cpp
 
 multitest: multitest.cpp
 	g++ -g -std=c++11 multitest.cpp -o multitest -lboost_system
+
+tracktest: tracktest.cpp
+	g++ -g -std=c++11 tracktest.cpp -o tracktest `pkg-config --cflags --libs opencv`

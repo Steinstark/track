@@ -2,6 +2,7 @@
 #define TRACK_TEST_ENGINE
 
 #include <string>
+#include <vector>
 #include <opencv2/opencv.hpp>
 
 const std::string xml = "-str.xml";
@@ -15,7 +16,7 @@ cv::Rect translate(std::string pdf, cv::Rect bb);
 
 double compare(const std::vector<cv::Rect >& gt, const std::vector<cv::Rect >& d);
 
-int save(std::string in, std::string out);
+std::vector<std::string> save(std::string in, std::string out);
 
 void getGroundTruth(std::string file,
 		    std::vector<std::vector<cv::Rect> >& table_regions,

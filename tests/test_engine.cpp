@@ -85,17 +85,19 @@ Rect translate(int height, Rect bb){
   return Rect(bb.x, height - bb.y, bb.width, bb.height); 
 }
 
-int save(string in, string out){
+vector<string> save(string in, string out){
   InitializeMagick("--quiet");
   vector<Image> imageList;
   readImages(&imageList, in);
   int index = out.find_last_of(".");
+  vector<string> files;
   for (int i = 0; i < imageList.size(); i++){    
     ostringstream oss;
-    oss << out.substr(0, index) << "_" << i << out.substr(index);
+    oss << out.substr(0, index) << "_" << i << out.substr(index);    
     imageList[i].write(oss.str());
+    files.push_back(oss.str());
   }  
-  return imageList.size();
+  return files;
 }
 
 int getHeight(string pdf){

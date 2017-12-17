@@ -22,7 +22,7 @@ bool isExtrema(double a, double b){
   return (a < 0 && b > 0) || (a > 0 && b < 0);
 }
 
-void displayHist(const Mat& img, string str){
+void displayHist(string str, const Mat& img){
   int m = 0;
   int length = max(img.rows, img.cols);
   for (int i = 0; i < length; i++){
@@ -169,6 +169,14 @@ int getLineMedian(const Mat& hist){
   int val =  (text[a].length() + text[b].length())/2+1;
   return val;
 }
+
+static void on_trackbar(int val, void* obj)
+{
+  Mat src = *((Mat*) obj);
+  Mat dst;
+  blur(src, dst, Size(val, val), Point(-1,-1), BORDER_DEFAULT);
+  imshow( "Linear Blend", dst );
+}
     
 //row 1 col 0
 double homogenity_stats(Mat& bw, Mat& hist, int dim){
@@ -181,7 +189,13 @@ double homogenity_stats(Mat& bw, Mat& hist, int dim){
   int scale = 255;
   reduce(bw, hist, dim, CV_REDUCE_SUM, CV_64F);
   Mat sred = hist / scale;
-  int s = getLineMedian(sred);  
+  //  int s = getLineMedian(sred);
+
+  int s = 1;
+  namedWindow("nw", WINDOW_AUTOSIZE); // Create Window
+  createTrackbar( "Blurbar", "Linear Blend", &s, 100, on_trackbar, &sred);
+  waitKey(0);
+  
   Mat blurred;
   blur(sred, blurred, Size(s,s), Point(-1,-1), BORDER_CONSTANT);
   Mat sob;

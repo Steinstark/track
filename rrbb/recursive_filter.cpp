@@ -78,7 +78,7 @@ int search_tree(RT& tree, Rect r, vector<int>& vec){
 vector<double> k_calc(vector<double> means, vector<double> medians){
   vector<double> k(3);
   for (int i = 0; i < 3; i++){
-    k.push_back(max(means[i]/medians[i], medians[i]/means[i]));
+    k[i] = max(means[i]/medians[i], medians[i]/means[i]);
   }
   return k;
 }
@@ -310,6 +310,6 @@ vector<int> recursive_filter(const Mat& img, const Mat& stats){
   vector<int> me = minimum_median_filter(nodes);
   vector<int> v;
   v.insert(v.end(), ce.begin(), ce.end());
-  //v.insert(v.end(), me.begin(), me.end());
+  v.insert(v.end(), me.begin(), me.end());
   return v;
 }

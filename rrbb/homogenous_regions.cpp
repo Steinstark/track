@@ -1,8 +1,6 @@
-
 #include <algorithm>
 #include <queue>
 #include "opencv2/highgui/highgui.hpp"
-
 #include "homogenous_regions.hpp"
 
 using namespace std;
@@ -153,20 +151,23 @@ vector<int> split_block(const Mat& hist){
   }
   else if (maxt > medt){
     split_text(text, space, text_perm, split);    
-  }			
+  }
+  else
+    cout << "Couldnt split space" << endl;
   return split;
 }
 
 int getLineMedian(const Mat& hist){
   vector<Line> text,space;
   find_lines(hist, text, space);
-  if (text.empty())
+  if (text.empty() || space.empty())
     return 20;
   sort(text.begin(), text.end(), [](Line l, Line r){return l.length() < r.length();});
+  sort(space.begin(), space.end(), [](Line l, Line r){return l.length() > r.length();});
   int n = text.size();
   int a = n/2;
   int b = a -(n % 2 == 0);
-  int val =  (text[a].length() + text[b].length())/2+1;
+  int val =  2*(text[a].length() + text[b].length())+1;
   return val;
 }
 
@@ -175,46 +176,57 @@ static void on_trackbar(int val, void* obj)
   Mat src = *((Mat*) obj);
   Mat dst;
   blur(src, dst, Size(val, val), Point(-1,-1), BORDER_DEFAULT);
-  imshow( "Linear Blend", dst );
+  //  displayHist( "nw", dst );
+  Mat sob;
+  int xder = 0;
+  int yder = 0;
+  if (src.cols > 1)
+    xder = 1;
+  if (src.rows > 1)
+    yder = 1;
+  Scharr(dst, sob, -1, xder, yder);
+  displayHist("nw", sob);
 }
     
 //row 1 col 0
 double homogenity_stats(Mat& bw, Mat& hist, int dim){
   int xder = 0;
   int yder = 0;
-  if (dim == 0)
-    xder = 1;
-  if (dim == 1)
-    yder = 1;
   int scale = 255;
+  int sx = 1;
+  int sy = 1;
   reduce(bw, hist, dim, CV_REDUCE_SUM, CV_64F);
   Mat sred = hist / scale;
-  //  int s = getLineMedian(sred);
+  int s = getLineMedian(sred);
+  //  cout << "Size: " << s << endl;
 
-  int s = 1;
-  namedWindow("nw", WINDOW_AUTOSIZE); // Create Window
-  createTrackbar( "Blurbar", "Linear Blend", &s, 100, on_trackbar, &sred);
-  waitKey(0);
-  
+  //  namedWindow("nw", WINDOW_AUTOSIZE); // Create Window
+  //  createTrackbar( "Blurbar", "nw", &s, 100, on_trackbar, &sred);
+  //  waitKey(0);
+
+  if (!(s % 2))
+    s++;
+  if (dim == 0){
+    xder = 1;
+    sx = s;
+  }
+  if (dim == 1){
+    yder = 1;
+    sy = s;
+  }
   Mat blurred;
-  blur(sred, blurred, Size(s,s), Point(-1,-1), BORDER_CONSTANT);
+  blur(sred, blurred, Size(sx,sy), Point(-1,-1), BORDER_CONSTANT);
   Mat sob;
+  
   Scharr(blurred, sob, -1, xder, yder);
-  vector<int> a0;
   int length = max(sob.rows, sob.cols);
-  for (int i = 1; i < length ; i++){
-    if (isExtrema(sob.at<double>(i), sob.at<double>(i-1))){
-      a0.push_back(i);
-    }
-  }
-  if (a0.size() < 2)
-    return 0;
-  Mat peaks(a0.size(), 1, CV_32S, a0.data());
-  vector<int> a1;
-  for (int i = 1; i < a0.size(); i++){
-    a1.push_back(a0[i] - a0[i-1]);
-  }
-  Mat delta = Mat(a0.size()-1, 1, CV_32S, a1.data());
+  vector<Line> text, space;
+  vector<int> a0;
+  find_lines(sob, text, space);
+  for (int i = 0; i < space.size(); i++){
+    a0.push_back(space[i].length());
+  }  
+  Mat delta = Mat(a0.size(), 1, CV_32S, a0.data());
   Mat mean, stddev;
   meanStdDev(delta, mean, stddev);
   double st = stddev.at<double>(0,0);
@@ -232,7 +244,10 @@ vector<Rect> get_regions(const Mat& img, Rect bb, int dim){
     q.pop();
     Mat block = img(r), hist;
     double var = homogenity_stats(block, hist, dim);
-    vector<int> split = split_block(hist);      
+    vector<int> split = split_block(hist);
+    //    imshow("block", block);
+    cout << "Variance: " << var << endl;
+    //    waitKey(0);
     if (var > varmax && !split.empty()){
       vector<Rect> rvec = split_rectangles(r, split, dim);
       for (int i = 0; i < rvec.size(); i++)

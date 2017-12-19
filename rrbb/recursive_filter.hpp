@@ -4,6 +4,6 @@
 #include <vector>
 #include <opencv2/opencv.hpp>
 
-std::vector<int> recursive_filter(const cv::Mat& img, const cv::Mat& stats);
+std::vector<int> recursive_filter(const cv::Mat& stats);
 
 #endif

@@ -290,7 +290,7 @@ vector<int> minimum_median_filter(NodeDB& nodes){
   return v;
 }
 
-vector<int> recursive_filter(const Mat& img, const Mat& stats){
+vector<int> recursive_filter(const Mat& stats){
   int labels = stats.rows;
   RT tree;
   vector<Rect> bb(labels);

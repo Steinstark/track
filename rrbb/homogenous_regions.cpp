@@ -266,11 +266,11 @@ vector<Rect> homogenous_regions(const Mat& img){
     vector<Rect> tmp = get_regions(img, h[i], 0);
     regions.insert(regions.end(), tmp.begin(), tmp.end());
   }
-  Mat disp = img.clone();
-  for (int i = 0; i < regions.size(); i++){
+  // Mat disp = img.clone();
+  /* for (int i = 0; i < regions.size(); i++){
     rectangle(disp, regions[i], Scalar(255));
-  }
-  //imshow("homogen", disp);
+    }*/
+  // imshow("homogen", disp);
   //waitKey(0);
   return regions;
 }

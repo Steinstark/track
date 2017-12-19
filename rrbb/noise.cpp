@@ -24,7 +24,7 @@ void remove_noise(Mat& text, Mat& nontext){
   for (int i = 1; i < t_labels; i++){
     insert2tree(t_tree, stats2rect(t_stats, i), i);
   }
-  int s = 1;
+  int s = 3;
   Mat element = getStructuringElement( MORPH_RECT, Size(s,1), Point(-1,-1));
   Mat ntd;
   dilate(nontext, ntd, element);
@@ -38,13 +38,18 @@ void remove_noise(Mat& text, Mat& nontext){
     vector<int> overlap;
     search_tree(nt_tree, stats2rect(t_stats, i), overlap);
     int t_area = t_stats.at<int>(i, CC_STAT_AREA);
+    Rect tr = stats2rect(t_stats, i);
     for (int j = 0; j < overlap.size(); j++){
-      int nt_area = nt_stats.at<int>(overlap[j], CC_STAT_AREA);
-      if (t_area > nt_area){
-	move2(nontext, text, nt_cc, stats2rect(nt_stats, overlap[j]), overlap[j]);
-      }else{
-	move2(text, nontext, t_cc, stats2rect(t_stats, i), i);
-      }	
+      Rect ntr = stats2rect(nt_stats, overlap[j]);
+      Rect intersect = tr & ntr;
+      if (intersect != tr){
+	int nt_area = nt_stats.at<int>(overlap[j], CC_STAT_AREA);
+	if (t_area > nt_area){
+	  move2(nontext, text, nt_cc, overlap[j]);
+	}else{
+	  move2(text, nontext, t_cc, i);
+	}
+      }
     }
   }
 }

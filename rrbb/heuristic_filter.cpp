@@ -78,10 +78,7 @@ vector<int> heuristic_filter(Mat& in, Mat& labels, Mat& stats, Mat& textimg, Mat
   }
   textimg = Mat(in.size(), CV_8UC1, Scalar(0));
   in.copyTo(textimg, ~mask);
-  for (int i = 0; i <  text.size(); i++){
-    mask = mask | (labels== text[i]);
-  }
   nontextimg = Mat(in.size(), CV_8UC1, Scalar(0));
-  in.copyTo(nontextimg, ~mask);
+  in.copyTo(nontextimg, mask);
   return text;
 }

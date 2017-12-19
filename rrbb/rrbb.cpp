@@ -9,6 +9,7 @@
 #include "recursive_filter.hpp"
 #include "mla.hpp"
 #include "mlc.hpp"
+#include "noise.hpp"
 
 using namespace std;
 using namespace cv;
@@ -34,13 +35,13 @@ vector<Rect> detect_tables(string filename){
   //waitKey(0);
   multi_level_analysis(text, nontext);
   multi_level_classification(text, nontext);
+  remove_noise(text, nontext);
   imshow("text", text);
-  waitKey(1000);
+  waitKey(2000);
   imshow("nontext", nontext);
   waitKey(0);
   //imshow("mla", text);
-  //waitKey(0);
-  //noise_removal(bw);
+  //waitKey(0); 
 }
 
  main(int argc, char** argv){

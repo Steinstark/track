@@ -1,6 +1,8 @@
 #ifndef TRACK_NOISE_HPP
 #define TRACK_NOISE_HPP
 
-cv::Mat remove_noise(const Mat& text, const Mat& nontext);
+#include <opencv2/opencv.hpp>
+
+void remove_noise(cv::Mat& text, cv::Mat& nontext);
 
 #endif

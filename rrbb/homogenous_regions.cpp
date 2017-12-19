@@ -89,12 +89,12 @@ vector<int> range(int l){
 void split_text(const vector<Line>& text, const vector<Line>& space, const vector<int>& text_perm, vector<int>& split){  
   if (space.empty()){
     //should never happen if the program is working correctly
-    cout << "No space to split" << endl;
+    //cout << "No space to split" << endl;
     return;
   }
   if (text.size() < 2){
     //should never happen if the program is working correctly
-    cout << "Not splitting single text region" << endl;
+    //cout << "Not splitting single text region" << endl;
     return;
   }  
   int i = text_perm[0];  
@@ -153,7 +153,7 @@ vector<int> split_block(const Mat& hist){
     split_text(text, space, text_perm, split);    
   }
   else
-    cout << "Couldnt split space" << endl;
+    //cout << "Couldnt split space" << endl;
   return split;
 }
 
@@ -246,7 +246,7 @@ vector<Rect> get_regions(const Mat& img, Rect bb, int dim){
     double var = homogenity_stats(block, hist, dim);
     vector<int> split = split_block(hist);
     //    imshow("block", block);
-    cout << "Variance: " << var << endl;
+    //cout << "Variance: " << var << endl;
     //    waitKey(0);
     if (var > varmax && !split.empty()){
       vector<Rect> rvec = split_rectangles(r, split, dim);
@@ -270,7 +270,7 @@ vector<Rect> homogenous_regions(const Mat& img){
   for (int i = 0; i < regions.size(); i++){
     rectangle(disp, regions[i], Scalar(255));
   }
-  imshow("homogen", disp);
-  waitKey(0);
+  //imshow("homogen", disp);
+  //waitKey(0);
   return regions;
 }

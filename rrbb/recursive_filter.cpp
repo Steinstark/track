@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <opencv2/opencv.hpp>
-#include <set>
 #include <iostream>
 #include <iterator>
 #include <boost/multi_index_container.hpp>
@@ -8,6 +7,7 @@
 #include <boost/multi_index/identity.hpp>
 #include <boost/multi_index/member.hpp>
 #include "RTree.h"
+#include "tree_helper.hpp"
 #include "recursive_filter.hpp"
 
 using namespace std;
@@ -55,25 +55,6 @@ using NodeDB = multi_index_container<
     ordered_non_unique<member<AreaNode, int, &AreaNode::h>, less<int> >
     >
   >;
-
-bool callback(int id, void* arg){
-  vector<int>* v = static_cast<vector<int>*>( arg );
-  v->push_back(id);
-  return true;
-}
-
-void insert2tree(RTree<int, int, 2, float>& tree, const Rect& r, int i){
-  int tl[] = {r.x, r.y};
-  int br[] = {r.br().x, r.br().y};
-  tree.Insert(tl, br, i);
-}
-
-int search_tree(RT& tree, Rect r, vector<int>& vec){
-  int tl[] = {r.x, r.y};
-  int br[] = {r.br().x, r.br().y};
-  return tree.Search(tl, br, callback,(static_cast<void*>(&vec)));
-}
-
 
 vector<double> k_calc(vector<double> means, vector<double> medians){
   vector<double> k(3);

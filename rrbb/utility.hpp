@@ -3,6 +3,6 @@
 
 #include <opencv2/opencv.hpp>
 
-void move2(cv::Mat& from, cv::Mat& to, const cv::Mat& cc,  cv::Rect r , int i);
+void move2(cv::Mat& from, cv::Mat& to, const cv::Mat& cc, int i);
 
 #endif

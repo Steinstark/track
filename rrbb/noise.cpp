@@ -9,14 +9,6 @@ using namespace std;
 using namespace cv;
 using RT = RTree<int, int, 2, float>;
 
-Rect stats2rect(const Mat& stats, int i){
-  int left = stats.at<int>(i, CC_STAT_LEFT);
-  int top = stats.at<int>(i, CC_STAT_TOP);
-  int width = stats.at<int>(i, CC_STAT_WIDTH);
-  int height = stats.at<int>(i, CC_STAT_HEIGHT);
-  return Rect(left, top, width, height);
-}
-
 void remove_noise(Mat& text, Mat& nontext){
   Mat t_cc, t_stats, t_centroids;
   int t_labels = connectedComponentsWithStats(text, t_cc, t_stats, t_centroids, 8, CV_32S);

@@ -2,49 +2,13 @@
 #include <queue>
 #include "opencv2/highgui/highgui.hpp"
 #include "homogenous_regions.hpp"
+#include "utility.hpp"
 
 using namespace std;
 using namespace cv;
 
-struct Line{
-  int l, r;
-  Line(int l, int r): l(l), r(r){};
-  int length() const;
-};
-
-int Line::length() const{
-  return r-l;
-}
-
 bool isExtrema(double a, double b){
   return (a < 0 && b > 0) || (a > 0 && b < 0);
-}
-
-void displayHist(string str, const Mat& img){
-  int m = 0;
-  int length = max(img.rows, img.cols);
-  for (int i = 0; i < length; i++){
-    int val = img.at<double>(i);
-    m = max(m,val);
-  }
-  Mat hist;
-  if (img.rows > img.cols){
-    hist = Mat::zeros(img.rows, m+50, CV_8U);
-    for (int i = 0; i < img.rows; i++){
-      for (int j = 0; j < img.at<double>(i,0); j++){
-	hist.at<uchar>(i,j) = 255;
-      }
-    }
-  }else{
-    hist = Mat::zeros(m+50, img.cols, CV_8U);
-    for (int i = 0; i < img.cols; i++){
-      for (int j = 0; j < img.at<double>(0, i); j++){
-	hist.at<uchar>(j,i) = 255;
-      }
-    }
-  }
-
-  imshow(str, hist);
 }
 
 vector<Rect> split_rectangles(Rect r, const vector<int>& split, int dim){
@@ -107,26 +71,6 @@ void split_text(const vector<Line>& text, const vector<Line>& space, const vecto
 void split_space(const vector<Line>& space, const vector<int>& space_perm, vector<int>& split){
   int i = space_perm[0];
   split.push_back((space[i].l+space[i].r)/2);  
-}
-
-
-void find_lines(const Mat& hist, vector<Line>& text, vector<Line>& space){
-  int length = max(hist.rows, hist.cols);
-  int t = 0;
-  for (int i = 1; i < length; i++){
-    if (!hist.at<double>(i-1) && hist.at<double>(i)){
-      t = i;
-    }
-    else if (hist.at<double>(i-1) && !hist.at<double>(i)){
-      text.push_back(Line(t,i-1));
-      t = -1;
-    }
-  }
-  if (t != -1)
-    text.push_back(Line(t,length-1));
-  for (int i = 1; i < text.size(); i++){
-    space.push_back(Line(text[i-1].r+1, text[i].l-1));
-  }
 }
 	 
 vector<int> split_block(const Mat& hist){

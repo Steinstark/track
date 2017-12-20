@@ -1,4 +1,3 @@
-
 heuristic_filter.o: heuristic_filter.cpp heuristic_filter.hpp
 	g++ -g -std=c++11 -c heuristic_filter.cpp -I../RTree `pkg-config --cflags --libs opencv`
 
@@ -21,10 +20,14 @@ noise.o: noise.cpp noise.hpp
 	g++ -g -std=c++11 -c noise.cpp `pkg-config --cflags --libs opencv` -I../RTree
 
 utility.o: utility.cpp utility.hpp
-	g++ -g -std=c++11 -c utility.cpp `pkg-config --cflags --libs opencv` -I../RTree	
+	g++ -g -std=c++11 -c utility.cpp `pkg-config --cflags --libs opencv`
 
-rrbb: rrbb.cpp heuristic_filter.o homogenous_regions.o recursive_filter.o mla.o mlc.o tree_helper.o noise.o utility.o
-	g++ -g -std=c++11 rrbb.cpp -o rrbb heuristic_filter.o homogenous_regions.o recursive_filter.o mla.o mlc.o tree_helper.o noise.o utility.o -I../RTree -I../ `pkg-config --cflags --libs opencv`
+segment.o: segment.cpp segment.hpp
+	g++ -g -std=c++11 -c segment.cpp `pkg-config --cflags --libs opencv` -I../RTree -lboost_system 
+
+
+rrbb: rrbb.cpp heuristic_filter.o homogenous_regions.o recursive_filter.o mla.o mlc.o tree_helper.o noise.o utility.o segment.o
+	g++ -g -std=c++11 rrbb.cpp -o rrbb heuristic_filter.o utility.o homogenous_regions.o recursive_filter.o mla.o mlc.o tree_helper.o noise.o segment.o -I../RTree -I../ `pkg-config --cflags --libs opencv`
 
 recursive_filter: recursive_filter.cpp
 	g++ -g -std=c++11 recursive_filter.cpp -o recursive_filter -I../RTree -I../ `pkg-config --cflags --libs opencv` -lboost_system

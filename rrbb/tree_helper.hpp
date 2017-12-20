@@ -9,4 +9,6 @@ void insert2tree(RTree<int, int, 2, float>& tree, const cv::Rect& r, int i);
 
 int search_tree(RTree<int, int, 2, float>& tree, cv::Rect r, std::vector<int>& vec);
 
+int search_tree(RTree<int, int, 2, float>& tree, cv::Rect r);
+
 #endif

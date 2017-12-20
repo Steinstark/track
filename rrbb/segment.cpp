@@ -20,9 +20,9 @@ using CompDB = multi_index_container<
   ComponentStats,
   indexed_by<
     ordered_non_unique<member<ComponentStats, int, &ComponentStats::area>, greater<int> >,
-    ordered_non_unique<member<ComponentStats, double, &ComponentStats::density>, greater<int> >,
-    ordered_non_unique<member<ComponentStats, double, &ComponentStats::hwratio>, greater<int> >,
-    ordered_non_unique<member<ComponentStats, double, &ComponentStats::density>, less<int> >
+    ordered_non_unique<member<ComponentStats, double, &ComponentStats::density>, greater<double> >,
+    ordered_non_unique<member<ComponentStats, double, &ComponentStats::hwratio>, greater<double> >,
+    ordered_non_unique<member<ComponentStats, double, &ComponentStats::density>, less<double> >
     >
   >;
 
@@ -86,6 +86,27 @@ Mat line_segment(Mat& nontext, CompDB& db, const Mat& cc){
   return lineBlob;
 }
 
+bool noCut(RT tree, Rect r){
+  Rect left(r.x-1, r.y, 1, r.height);
+  Rect right(r.x+r.width, r.y, 1, r.height);
+  Rect top(r.x, r.y-1, r.width, 1);
+  Rect bottom(r.x, r.y+r.height, r.width, 1);
+  return !search_tree(tree, left) &&
+    !search_tree(tree, top) &&
+    !search_tree(tree, right) &&
+    !search_tree(tree_bottom);    
+}
+
+bool manySmallRect(){
+  return true;
+}
+
+bool sumAreaInside(){
+  return true;
+}
+
+
+
 /*
 Mat table_segment(Mat& nontext, Mat& text, CompDB&  db, const Mat& cc, RT t_tree, RT nt_tree){
   auto&p = db.get<1>();
@@ -110,7 +131,8 @@ Mat separator_segment(Mat& nontext, CompDB& db, const Mat& cc, RT& tree){
   auto&p = db.get<3>();
   auto it = p.begin();
   Mat separatorBlob(cc.size(), CV_8UC1, Scalar(0));
-  while(it != p.end() && it->density <= 0.02){
+  while(it != p.end() && it->density <= 0.2){
+    cout << "separator segment" << endl;
     if (search_tree(tree, it->r)){
       move2(nontext, separatorBlob, cc, it->index);
       it = p.erase(it);
@@ -150,7 +172,6 @@ void segment(Mat& text, Mat& nontext){
   //Mat tableBlob = table_segment(nontext, text, db, nt_cc);
   Mat separatorBlob = separator_segment(nontext, db, nt_cc, t_tree);
   Mat imageBlob = image_segment(nontext, db, nt_cc);
-
   imshow("textBlob", textBlob);
   imshow("lineBlob", lineBlob);
   imshow("separatorBlob", separatorBlob);

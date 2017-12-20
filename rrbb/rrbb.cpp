@@ -10,6 +10,7 @@
 #include "mla.hpp"
 #include "mlc.hpp"
 #include "noise.hpp"
+#include "segment.hpp"
 
 using namespace std;
 using namespace cv;
@@ -32,14 +33,15 @@ vector<Rect> detect_tables(string filename){
   Mat text, nontext;
   heuristic_filter(bw, cc, stats,text, nontext);
   //  imshow("heuristic", text);
-  //waitKey(0);
+  //  waitKey(0);
   multi_level_analysis(text, nontext);
   multi_level_classification(text, nontext);
   remove_noise(text, nontext);
-  imshow("text", text);
-  waitKey(2000);
-  imshow("nontext", nontext);
-  waitKey(0);
+  segment(text, nontext);
+  //  imshow("text", text);
+  //waitKey(0);
+  //imshow("nontext", nontext);
+  //waitKey(0);
   //imshow("mla", text);
   //waitKey(0); 
 }

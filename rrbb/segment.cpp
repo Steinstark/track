@@ -86,7 +86,7 @@ Mat line_segment(Mat& nontext, CompDB& db, const Mat& cc){
   return lineBlob;
 }
 
-bool noCut(RT tree, Rect r){
+bool noCut(RT& tree, Rect r){
   Rect left(r.x-1, r.y, 1, r.height);
   Rect right(r.x+r.width, r.y, 1, r.height);
   Rect top(r.x, r.y-1, r.width, 1);
@@ -94,38 +94,42 @@ bool noCut(RT tree, Rect r){
   return !search_tree(tree, left) &&
     !search_tree(tree, top) &&
     !search_tree(tree, right) &&
-    !search_tree(tree_bottom);    
+    !search_tree(tree, bottom);    
 }
 
-bool manySmallRect(){
-  return true;
+int  manySmallRect(Mat& img, const Rect& r, RT& tree){
+  
+  Mat rev =  ~img(r), cc, stats, centroids;
+  int labels = connectedComponentsWithStats(rev, cc, stats, centroids, 8, CV_32S);
+  int area = 0;
+  for (int i = 1; i < labels; i++){
+    ComponentStats cs = stats2component(stats, i);
+    if (cs.density > 0.5 && search_tree(tree, cs.r + r.tl()))
+      area += cs.area;
+    else
+      return 0;
+  }
+  return area;
 }
 
-bool sumAreaInside(){
-  return true;
-}
 
 
-
-/*
-Mat table_segment(Mat& nontext, Mat& text, CompDB&  db, const Mat& cc, RT t_tree, RT nt_tree){
-  auto&p = db.get<1>();
+//
+Mat table_segment(Mat& nontext, Mat& text, CompDB&  db, const Mat& cc, RT& t_tree, RT& nt_tree){
+  auto&p = db.get<3>();
   auto it = p.begin();
   Mat tableBlob(cc.size(), CV_8UC1, Scalar(0));
-  while (it != p.end() && it-> density <= 0.02){
+  while (it != p.end() && it-> density <= 0.2){
     if (noCut(t_tree, it->r) &&
-	noCut(nt_tree, it->r) &&
-	manySmallRect(text(it->r)) &&
-	sumAreaInside(t_tree, it->r) >= 0.99 &&
-	areaInside / it->r.area >= 0.99 &&
-	!search_tree(nt_tree, it->r)){
+	//search_tree(nt_tree, it->r) < 2 &&
+	(double)manySmallRect(text, it->r, t_tree)/it->bb_area >= 0.8){    
       move2(nontext, tableBlob, cc, it->index);
       it = p.erase(it);
     }else
       it++;    	
   }
-  return tableBlob  
-  }*/
+  return tableBlob;  
+}
 
 Mat separator_segment(Mat& nontext, CompDB& db, const Mat& cc, RT& tree){
   auto&p = db.get<3>();
@@ -163,17 +167,22 @@ void segment(Mat& text, Mat& nontext){
     insert2tree(t_tree, r, i);
   }
   Mat nt_cc, nt_stats, nt_centroids;
+  RT nt_tree;
   int nt_labels = connectedComponentsWithStats(nontext, nt_cc, nt_stats, nt_centroids, 8, CV_32S);
   for (int i = 1; i < nt_labels; i++){
-    db.insert(stats2component(nt_stats, i));
+    ComponentStats cs = stats2component(nt_stats, i);
+    db.insert(cs);
+    insert2tree(nt_tree, cs.r, i);
   }
   Mat textBlob = text_segment(text);
   Mat lineBlob = line_segment(nontext, db, nt_cc);
-  //Mat tableBlob = table_segment(nontext, text, db, nt_cc);
+  Mat tableBlob = table_segment(nontext, text, db, nt_cc, t_tree, nt_tree);
   Mat separatorBlob = separator_segment(nontext, db, nt_cc, t_tree);
+  separatorBlob = separatorBlob | lineBlob;
   Mat imageBlob = image_segment(nontext, db, nt_cc);
   imshow("textBlob", textBlob);
-  imshow("lineBlob", lineBlob);
+  //  imshow("lineBlob", lineBlob);
+  imshow("tableBlob", tableBlob);
   imshow("separatorBlob", separatorBlob);
   imshow("imageBlob", imageBlob);
   waitKey(0);  

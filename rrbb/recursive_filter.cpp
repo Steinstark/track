@@ -9,6 +9,7 @@
 #include "RTree.h"
 #include "tree_helper.hpp"
 #include "recursive_filter.hpp"
+#include "utility.hpp"
 
 using namespace std;
 using namespace cv;
@@ -56,7 +57,7 @@ using NodeDB = multi_index_container<
     >
   >;
 
-vector<double> k_calc(vector<double> means, vector<double> medians){
+vector<double> k_calc(const vector<double>& means, const vector<double>& medians){
   vector<double> k(3);
   for (int i = 0; i < 3; i++){
     k[i] = max(means[i]/medians[i], medians[i]/means[i]);
@@ -135,16 +136,14 @@ vector<double> getMedians(NodeDB& nodes){
 vector<double> getMeans(NodeDB& nodes){
   auto& iv = nodes.get<3>();
   vector<double> mean(3,0);
-  int size = 0;
   auto it = iv.begin();
   for (auto it = iv.begin(); it != iv.end(); ++it){
     mean[0] += it->a;
     mean[1] += it->w;
     mean[2] += it->h;
-    size++;
   }
   for (int i = 0; i < 3; i++){
-    mean[i]/size;
+    mean[i] = mean[i]/nodes.size();
   }
   return mean;
 }
@@ -195,6 +194,8 @@ SpaceNode create_space(RT& tree, const vector<Rect>& bb, int i){
   return sn;
 }
 
+//TODO
+//Median and mean isn't updated properly
 vector<int> classify_elements(RT& tree, const vector<int>& se, vector<Rect> bb){
   vector<SpaceNode> space;
   for (int i = 0; i < bb.size(); i++){
@@ -219,7 +220,7 @@ vector<int> classify_elements(RT& tree, const vector<int>& se, vector<Rect> bb){
   return v;
 }
 
-bool isSuspected(NodeDB& nodes, const vector<double>& medians, const vector<double> k){
+bool isSuspected(NodeDB& nodes, const vector<double>& medians, const vector<double>& k){
   auto n1 = *nodes.get<0>().begin();
   if (n1.a > k[0]*medians[0]){
     auto n2 = *nodes.get<1>().begin();      
@@ -250,12 +251,14 @@ vector<int> suspected_elements(NodeDB& nodes){
 
 vector<int> minimum_median_filter(NodeDB& nodes){
   vector<int> v;
+  auto& ws = nodes.get<4>();
+  auto& hs = nodes.get<5>();
+  auto w = ws.begin();
+  auto h = hs.begin();
   while (nodes.size()){
     vector<double> medians = getMedians(nodes);
     vector<double> means = getMeans(nodes);
     vector<double> k = k_calc(means, medians);
-    auto& ws = nodes.get<4>();
-    auto& hs = nodes.get<5>();
     auto w = ws.begin();
     auto h = hs.begin();
     if (w->w < medians[1]/k[1]){
@@ -271,19 +274,16 @@ vector<int> minimum_median_filter(NodeDB& nodes){
   return v;
 }
 
-vector<int> recursive_filter(const Mat& stats){
-  int labels = stats.rows;
+bool recursive_filter(Mat& text, Mat& nontext){
+  Mat cc, stats, centroids;
+  int labels = connectedComponentsWithStats(text, cc, stats, centroids, 8, CV_32S);
   RT tree;
   vector<Rect> bb(labels);
   NodeDB nodes;
   for (int i = 1; i < labels; i++){
-    int left = stats.at<int>(i, CC_STAT_LEFT);
-    int top = stats.at<int>(i, CC_STAT_TOP);
-    int width = stats.at<int>(i, CC_STAT_WIDTH);
-    int height = stats.at<int>(i, CC_STAT_HEIGHT);
-    int area = stats.at<int>(i, CC_STAT_AREA);
-    bb[i] = Rect(left, top, width, height);
-    nodes.insert({area, width, height, i});
+    ComponentStats cs = stats2component(stats, i);
+    bb.push_back(cs.r);
+    nodes.insert({cs.area, bb[i].width, bb[i].height, i});
     insert2tree(tree, bb[i], i);
   }
   vector<int> se = suspected_elements(nodes);
@@ -292,5 +292,8 @@ vector<int> recursive_filter(const Mat& stats){
   vector<int> v;
   v.insert(v.end(), ce.begin(), ce.end());
   v.insert(v.end(), me.begin(), me.end());
-  return v;
+  for (int i = 0; i < v.size(); i++){
+    move2(text, nontext, cc, v[i]);
+  }
+  return v.size() > 0 && v.size() != labels-1;
 }

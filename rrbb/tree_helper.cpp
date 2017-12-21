@@ -23,7 +23,6 @@ int search_tree(RT& tree, Rect r, vector<int>& vec){
 }
 
 int search_tree(RT& tree, Rect r){
-  int tl[] = {r.x, r.y};
-  int br[] = {r.br().x, r.br().y};
-  return tree.Search(tl, br, NULL, NULL);
+  vector<int> junk;
+  return search_tree(tree, r, junk);
 }

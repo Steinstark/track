@@ -25,15 +25,12 @@ vector<Rect> detect_tables(string filename){
   Mat img = imread(filename.c_str(), IMREAD_GRAYSCALE);  
   if (!img.data)
     cerr << "Problem loading image. " << endl;
-  Mat bw = gray2binary(img);
-  Mat cc;
-  Mat stats;
-  Mat centroids;
-  int nLabels = connectedComponentsWithStats(bw, cc, stats, centroids, 8, CV_32S);
-  Mat text, nontext;
-  heuristic_filter(bw, cc, stats,text, nontext);
-  //  imshow("heuristic", text);
-  //  waitKey(0);
+  Mat text = gray2binary(img);
+  Mat nontext(text.size(), CV_8UC1, Scalar(0));
+  heuristic_filter(text, nontext);
+  imshow("text", text);
+  imshow("nontext", nontext);
+  waitKey(0);
   multi_level_analysis(text, nontext);
   multi_level_classification(text, nontext);
   remove_noise(text, nontext);

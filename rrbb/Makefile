@@ -38,5 +38,12 @@ multitest: multitest.cpp
 homotest: homotest.cpp heuristic_filter.o homogenous_regions.o tree_helper.o utility.o
 	g++ -g -std=c++11 homotest.cpp -o homotest heuristic_filter.o utility.o homogenous_regions.o tree_helper.o -I../RTree -I../ `pkg-config --cflags --libs opencv`
 
+filtertest: filtertest.cpp heuristic_filter.o homogenous_regions.o recursive_filter.o mla.o mlc.o tree_helper.o utility.o
+	g++ -g -std=c++11 filtertest.cpp -o filtertest heuristic_filter.o utility.o homogenous_regions.o recursive_filter.o mla.o mlc.o tree_helper.o -I../RTree -I../ `pkg-config --cflags --libs opencv`
+
+
+noisetest: noisetest.cpp heuristic_filter.o homogenous_regions.o recursive_filter.o mla.o mlc.o tree_helper.o utility.o noise.o
+	g++ -g -std=c++11 noisetest.cpp -o noisetest heuristic_filter.o utility.o homogenous_regions.o recursive_filter.o mla.o mlc.o tree_helper.o noise.o -I../RTree -I../ `pkg-config --cflags --libs opencv`
+
 tracktest: tracktest.cpp
 	g++ -g -std=c++11 tracktest.cpp -o tracktest `pkg-config --cflags --libs opencv`

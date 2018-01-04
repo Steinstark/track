@@ -84,8 +84,6 @@ queue<IntPair> splitRegion(Mat& hist){
   return qout;
 }
 
-//IMPROVEMENT
-//using Rect to define two points on a line is not a good choice.
 vector<Rect> homogenous_regions(const Mat& img){
   Mat histRow;
   reduce(img, histRow, 1, CV_REDUCE_SUM, CV_64F);

@@ -28,9 +28,6 @@ vector<Rect> detect_tables(string filename){
   Mat text = gray2binary(img);
   Mat nontext(text.size(), CV_8UC1, Scalar(0));
   heuristic_filter(text, nontext);
-  imshow("text", text);
-  imshow("nontext", nontext);
-  waitKey(0);
   multi_level_analysis(text, nontext);
   multi_level_classification(text, nontext);
   remove_noise(text, nontext);

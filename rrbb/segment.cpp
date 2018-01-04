@@ -27,49 +27,29 @@ using CompDB = multi_index_container<
   >;
 
 //v is assumed to be sorted
-int getQ3(vector<Line> v){
+int getQ3(const vector<Line>& v){
   int n = v.size();
   int pos = 3*n/4;
   if (!n || !v[pos].length()){
     cout << "size or length is 0" << endl;
-    return 1;    
+    return 15;    
   }
   return v[pos].length();
 }
 
+
+//TODO
+//Find and fix errors of text blobbing and segmentation
 Mat text_segment(Mat& text){
-  Mat cc, stats, centroids;
-  int labels = connectedComponentsWithStats(text, cc, stats, centroids, 8, CV_32S);
-  Mat bounds(text.size(), CV_8UC1, Scalar(0));
-  for (int i = 1; i < labels; i++){
-    Rect r = stats2rect(stats, i);
-    rectangle(bounds, r, Scalar(255));
-  }
-  //  imshow("bounds", bounds);
-  //  waitKey(0);
-  vector<Rect> regions = homogenous_regions(bounds);
-  //for (Rect r : regions){
-  //rectangle(bounds, r, Scalar(255));
-  //}
-  //  imshow("homogen bounds", bounds);
-  //  waitKey(0);
+  vector<Rect> regions = homogenous_regions(text);
   Mat textBlob(text.size(), CV_8UC1, Scalar(0));
   for (Rect r : regions){
-    int kernel[2];
-    for (int i = 0; i < 2; i++){
-      Mat hist;
-      reduce(text(r), hist, i, CV_REDUCE_SUM, CV_64F);
-      vector<Line> textLine, spaceLine;
-      find_all_lines(hist, textLine, spaceLine);
-      sort(spaceLine.begin(), spaceLine.end(), [](Line a, Line b){ return a.length() < b.length();});
-      int val = getQ3(spaceLine);
-      kernel[i] = val;
-    }    
-    Mat element = getStructuringElement(MORPH_RECT, Size(2*kernel[0], 2*kernel[1]), Point(-1, -1));
-    dilate(bounds(r), bounds(r), element);
-    erode(bounds(r), bounds(r), element);
+    Mat blob;
+    findNonZero(text(r), blob);
+    Rect br = boundingRect(blob);
+    rectangle(textBlob, br+r.tl(), Scalar(255), CV_FILLED);
   }
-  return bounds;
+  return textBlob;
 }
 
 Mat line_segment(Mat& nontext, CompDB& db, const Mat& cc){
@@ -136,7 +116,6 @@ Mat separator_segment(Mat& nontext, CompDB& db, const Mat& cc, RT& tree){
   auto it = p.begin();
   Mat separatorBlob(cc.size(), CV_8UC1, Scalar(0));
   while(it != p.end() && it->density <= 0.2){
-    cout << "separator segment" << endl;
     if (search_tree(tree, it->r)){
       move2(nontext, separatorBlob, cc, it->index);
       it = p.erase(it);

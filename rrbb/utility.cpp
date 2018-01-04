@@ -11,10 +11,6 @@ ComponentStats::ComponentStats(Rect r, int area, int i) : r(r), area(area),  ind
   hwratio = (double)min(r.width, r.height)/max(r.width, r.height);
 }
 
-int Line::length() const{
-  return r-l;
-}
-
 void move2(Mat& from, Mat& to, const Mat& cc, int i){
   Mat mask(cc.size(), CV_8UC1, Scalar(0));
   mask = mask | (cc==i);
@@ -23,6 +19,9 @@ void move2(Mat& from, Mat& to, const Mat& cc, int i){
   from = from & ~mask;
 }
 
+Rect pos2rect(int l, int t, int r, int b){
+  return Rect(l, t, r-l, b-t);
+}
 
 Rect stats2rect(const Mat& stats, int i){
   int left = stats.at<int>(i, CC_STAT_LEFT);

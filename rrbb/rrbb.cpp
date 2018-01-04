@@ -32,12 +32,6 @@ vector<Rect> detect_tables(string filename){
   multi_level_classification(text, nontext);
   remove_noise(text, nontext);
   segment(text, nontext);
-  //  imshow("text", text);
-  //waitKey(0);
-  //imshow("nontext", nontext);
-  //waitKey(0);
-  //imshow("mla", text);
-  //waitKey(0); 
 }
 
  main(int argc, char** argv){

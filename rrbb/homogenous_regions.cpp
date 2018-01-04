@@ -1,169 +1,35 @@
 #include <algorithm>
 #include <queue>
-#include "opencv2/highgui/highgui.hpp"
+#include <utility>
 #include "homogenous_regions.hpp"
 #include "utility.hpp"
 
 using namespace std;
 using namespace cv;
 
-bool isExtrema(double a, double b){
-  return (a < 0 && b > 0) || (a > 0 && b < 0);
-}
+using IntPair = pair<int, int>;
 
-vector<Rect> split_rectangles(Rect r, const vector<int>& split, int dim){
-  function<Rect(int, int)> create;
-  vector<Rect> splitted;
-  int end;
-  if (dim){
-    create = [&r](int a, int b){return Rect(r.x,r.y + a, r.width, b-a);};
-    end = r.height;
-  }else{
-    create = [&r](int a, int b){return Rect(r.x+ a,r.y, b-a, r.height);};
-    end = r.width;
+int isOutlier(vector<Line> lines){
+  int maxVal = -1;
+  int index;
+  for (int i = 0; i < lines.size(); i++){
+    if (lines[i].length() > maxVal){
+      maxVal = lines[i].length();
+      index  = i;
+    }
   }
-  int a = 0, b = 0;
-  for (int i = 0; i < split.size(); i++){
-    b = split[i];
-    if (a != b)
-      splitted.push_back(create(a,b));
-    a = b;
-  }
-  if (b != end)
-    splitted.push_back(create(b,end));
-  return splitted;
+  sort(lines.begin(), lines.end(), [](const Line& a, const Line& b){return a.length() > b.length();});
+  int mid = lines.size()/2;
+  int median = lines[mid].length();
+  if (maxVal > median) return index;
+  return 0;
 }
-
-template <class T>
-double getMedian(const vector<T>& v, function<int(T)> val){
-  int mid = v.size()/2;
-  if (v.size() % 2)
-    return val(v[mid]);
-  return (val(v[mid]) +val(v[mid-1]))/2.0;
-}
-
-vector<int> range(int l){
-  vector<int> r(l);
-  for (int i = 0; i < l; i++){
-    r[i] = i;   
-  }
-  return r;
-}
-
-void split_text(const vector<Line>& text, const vector<Line>& space, const vector<int>& text_perm, vector<int>& split){  
-  if (space.empty()){
-    //should never happen if the program is working correctly
-    //cout << "No space to split" << endl;
-    return;
-  }
-  if (text.size() < 2){
-    //should never happen if the program is working correctly
-    //cout << "Not splitting single text region" << endl;
-    return;
-  }  
-  int i = text_perm[0];  
-  if (i > 0)
-    split.push_back((space[i-1].l + space[i-1].r)/2);
-  else
-    split.push_back((space[i].l + space[i].r)/2);
-}
-
-void split_space(const vector<Line>& space, const vector<int>& space_perm, vector<int>& split){
-  int i = space_perm[0];
-  split.push_back((space[i].l+space[i].r)/2);  
-}
-	 
-vector<int> split_block(const Mat& hist){
-  vector<Line> text;
-  vector<Line> space;
-  find_lines(hist, text, space);
-  vector<int> text_perm = range(text.size());
-  vector<int> space_perm = range(space.size());
-  sort(text_perm.begin(), text_perm.end(),
-       [&text](int a, int b){return text[a].length() > text[b].length();});
-  sort(space_perm.begin(), space_perm.end(),
-       [&space](int a, int b){return space[a].length() > space[b].length();});
-  vector<int> split;
-  if (space.empty() || text.empty())
-    return split;
-  int maxs = space[space_perm[0]].length();  
-  int maxt = text[text_perm[0]].length();
-  double meds = getMedian<int>(space_perm, [&space](int a){return space[a].length();});
-  double medt = getMedian<int>(text_perm, [&text](int a){return text[a].length();});
-  if (maxs > meds){
-    split_space(space, space_perm, split);
-  }
-  else if (maxt > medt){
-    split_text(text, space, text_perm, split);    
-  }
-  else
-    //cout << "Couldnt split space" << endl;
-  return split;
-}
-
-int getLineMedian(const Mat& hist){
-  vector<Line> text,space;
-  find_lines(hist, text, space);
-  if (text.empty() || space.empty())
-    return 20;
-  sort(text.begin(), text.end(), [](Line l, Line r){return l.length() < r.length();});
-  sort(space.begin(), space.end(), [](Line l, Line r){return l.length() > r.length();});
-  int n = text.size();
-  int a = n/2;
-  int b = a -(n % 2 == 0);
-  int val =  2*(text[a].length() + text[b].length())+1;
-  return val;
-}
-
-static void on_trackbar(int val, void* obj)
-{
-  Mat src = *((Mat*) obj);
-  Mat dst;
-  blur(src, dst, Size(val, val), Point(-1,-1), BORDER_DEFAULT);
-  //  displayHist( "nw", dst );
-  Mat sob;
-  int xder = 0;
-  int yder = 0;
-  if (src.cols > 1)
-    xder = 1;
-  if (src.rows > 1)
-    yder = 1;
-  Scharr(dst, sob, -1, xder, yder);
-  displayHist("nw", sob);
-}
-    
-//row 1 col 0
-double homogenity_stats(Mat& bw, Mat& hist, int dim){
-  int xder = 0;
-  int yder = 0;
-  int scale = 255;
-  int sx = 1;
-  int sy = 1;
-  reduce(bw, hist, dim, CV_REDUCE_SUM, CV_64F);
-  Mat sred = hist / scale;
-  int s = getLineMedian(sred);
-  //  cout << "Size: " << s << endl;
-
-  //  namedWindow("nw", WINDOW_AUTOSIZE); // Create Window
-  //  createTrackbar( "Blurbar", "nw", &s, 100, on_trackbar, &sred);
-  //  waitKey(0);
-
-  if (!(s % 2))
-    s++;
-  if (dim == 0){
-    xder = 1;
-    sx = s;
-  }
-  if (dim == 1){
-    yder = 1;
-    sy = s;
-  }
-  Mat blurred;
-  blur(sred, blurred, Size(sx,sy), Point(-1,-1), BORDER_CONSTANT);
-  Mat sob;
-  
-  Scharr(blurred, sob, -1, xder, yder);
-  int length = max(sob.rows, sob.cols);
+	  
+double similarity(const Mat& hist){
+  int s = 5;
+  Mat blurred, sob;
+  blur(hist, blurred, Size(1,s), Point(-1,-1), BORDER_CONSTANT);
+  Scharr(blurred, sob, -1, 0, 1);
   vector<Line> text, space;
   vector<int> a0;
   find_lines(sob, text, space);
@@ -177,44 +43,67 @@ double homogenity_stats(Mat& bw, Mat& hist, int dim){
   return st*st;
 }
 
-vector<Rect> get_regions(const Mat& img, Rect bb, int dim){
-  function<int(Rect)> getVal;
-  queue<Rect> q;
-  q.push(bb);
-  double varmax = 1.2;
-  vector<Rect> v;
-  while(!q.empty()){
-    Rect r = q.front();
-    q.pop();
-    Mat block = img(r), hist;
-    double var = homogenity_stats(block, hist, dim);
-    vector<int> split = split_block(hist);
-    //    imshow("block", block);
-    //cout << "Variance: " << var << endl;
-    //    waitKey(0);
-    if (var > varmax && !split.empty()){
-      vector<Rect> rvec = split_rectangles(r, split, dim);
-      for (int i = 0; i < rvec.size(); i++)
-	q.push(rvec[i]);
-    }
-    else
-      v.push_back(r);
+int split(Mat& hist){
+  vector<Line> text, space;
+  find_lines(hist, text, space);
+  if (space.empty()){
+    cout << "Can't split region without space. Returning split 0" << endl;
+    return 0;
   }
-  return v;
+  int spaceIndex = isOutlier(space);
+  if (spaceIndex){
+    return (space[spaceIndex].l + space[spaceIndex].r)/2;
+  }
+  int textIndex = isOutlier(text);
+  if (textIndex){
+    if (textIndex == space.size())
+      return (space[textIndex-1].l + space[textIndex-1].r)/2;
+    return (space[textIndex].l + space[textIndex].r)/2;
+  }
+  cout << "Region can't be split. Returning split 0" << endl;
+  return 0;
 }
 
-vector<Rect> homogenous_regions(const Mat& img){
-  vector<Rect> h = get_regions(img, Rect(0,0, img.cols, img.rows), 1);
-  vector<Rect> regions;
-  for (int i = 0; i < h.size(); i++){
-    vector<Rect> tmp = get_regions(img, h[i], 0);
-    regions.insert(regions.end(), tmp.begin(), tmp.end());
+queue<IntPair> splitRegion(Mat& hist){
+  queue<IntPair> qin, qout;
+  qin.push(IntPair(0, hist.rows));  
+  while (qin.size()){
+    IntPair p = qin.front();    
+    qin.pop();
+    Rect r = pos2rect(0, p.first, 1, p.second);
+    Mat localHist = hist(r);
+    int pos = split(localHist);
+    if (similarity(localHist) <= 1.2 || !pos)
+      qout.push(p);
+    else{
+      pos += p.first;
+      qin.push(IntPair(p.first, pos));
+      qin.push(IntPair(pos, p.second));
+    }
   }
-  // Mat disp = img.clone();
-  /* for (int i = 0; i < regions.size(); i++){
-    rectangle(disp, regions[i], Scalar(255));
-    }*/
-  // imshow("homogen", disp);
-  //waitKey(0);
+  return qout;
+}
+
+//IMPROVEMENT
+//using Rect to define two points on a line is not a good choice.
+vector<Rect> homogenous_regions(const Mat& img){
+  Mat histRow;
+  reduce(img, histRow, 1, CV_REDUCE_SUM, CV_64F);
+  vector<Rect> regions;
+  queue<IntPair> q1 = splitRegion(histRow);  
+  while (q1.size()){
+    IntPair p1 = q1.front();
+    q1.pop();
+    Mat histCol;
+    Rect reg = pos2rect(0, p1.first, img.cols, p1.second);
+    reduce(img(reg), histCol, 0, CV_REDUCE_SUM, CV_64F);
+    transpose(histCol, histCol);
+    queue<IntPair> q2 = splitRegion(histCol);
+    while (q2.size()){
+      IntPair p2 = q2.front();
+      q2.pop();
+      regions.push_back(pos2rect(p2.first, p1.first, p2.second, p1.second));
+    }
+  }
   return regions;
 }

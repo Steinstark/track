@@ -35,5 +35,8 @@ recursive_filter: recursive_filter.cpp
 multitest: multitest.cpp
 	g++ -g -std=c++11 multitest.cpp -o multitest -lboost_system
 
+homotest: homotest.cpp heuristic_filter.o homogenous_regions.o tree_helper.o utility.o
+	g++ -g -std=c++11 homotest.cpp -o homotest heuristic_filter.o utility.o homogenous_regions.o tree_helper.o -I../RTree -I../ `pkg-config --cflags --libs opencv`
+
 tracktest: tracktest.cpp
 	g++ -g -std=c++11 tracktest.cpp -o tracktest `pkg-config --cflags --libs opencv`

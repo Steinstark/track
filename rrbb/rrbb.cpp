@@ -5,7 +5,6 @@
 #include "detect_table.hpp"
 #include "RTree.h"
 #include "heuristic_filter.hpp"
-#include "homogenous_regions.hpp"
 #include "recursive_filter.hpp"
 #include "mla.hpp"
 #include "mlc.hpp"
@@ -21,6 +20,9 @@ Mat gray2binary(const Mat& gray){
   return bw;
 }
 
+//TODO
+//add non-dummy return
+
 vector<Rect> detect_tables(string filename){
   Mat img = imread(filename.c_str(), IMREAD_GRAYSCALE);  
   if (!img.data)
@@ -32,8 +34,6 @@ vector<Rect> detect_tables(string filename){
   multi_level_classification(text, nontext);
   remove_noise(text, nontext);
   segment(text, nontext);
-}
-
- main(int argc, char** argv){
-  detect_tables(string(argv[1]));
+  vector<Rect> v;
+  return v;
 }

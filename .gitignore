@@ -5,3 +5,5 @@
 !*.hpp
 !*.h
 !*/
+bin/
+build/

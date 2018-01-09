@@ -1,5 +1,4 @@
 *
-!Makefile
 !CMakeLists.txt
 !.gitignore
 !*.cpp

@@ -136,7 +136,7 @@ Mat image_segment(Mat& nontext, CompDB& db, Mat& cc){
   return imageBlob;
 }
 
-void segment(Mat& text, Mat& nontext){
+Mat segment(Mat& text, Mat& nontext){
   Mat t_cc, t_stats, t_centroids;
   RT t_tree;
   CompDB db;
@@ -159,10 +159,7 @@ void segment(Mat& text, Mat& nontext){
   Mat separatorBlob = separator_segment(nontext, db, nt_cc, t_tree);
   separatorBlob = separatorBlob | lineBlob;
   Mat imageBlob = image_segment(nontext, db, nt_cc);
-  imshow("textBlob", textBlob);
-  //  imshow("lineBlob", lineBlob);
-  imshow("tableBlob", tableBlob);
-  imshow("separatorBlob", separatorBlob);
-  imshow("imageBlob", imageBlob);
-  waitKey(0);  
+  return tableBlob;
 }
+
+

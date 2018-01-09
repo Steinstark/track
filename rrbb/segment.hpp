@@ -3,6 +3,6 @@
 
 #include <opencv2/opencv.hpp>
 
-void segment(cv::Mat& text, cv::Mat& nontext);
+cv::Mat segment(cv::Mat& text, cv::Mat& nontext);
 
 #endif

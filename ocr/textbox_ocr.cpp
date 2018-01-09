@@ -30,10 +30,6 @@ vector<string> textbox_content(const Mat& bw, const vector<cv::Rect>& rv){
   api->SetSourceResolution(150);
   vector<string> v; 
   for (Rect r : rv){
-    //cv::Scalar color = cv::Scalar(255,0,0);
-    //cv::rectangle(img, r.tl(), r.br(), color, 2,8,0);
-    //cv::imshow("img", img);
-    //cv::waitKey(0);
     api->SetRectangle(r.x, r.y, r.width, r.height);
     string s(api->GetUTF8Text());
     s.erase(remove(s.begin(), s.end(), '\n'), s.end());

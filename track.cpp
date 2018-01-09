@@ -1,5 +1,6 @@
 #include <string>
 #include <opencv2/opencv.hpp>
+#include <iostream>
 
 #include "detect_table.hpp"
 #include "detect_cell.hpp"
@@ -47,13 +48,12 @@ int main(int argc, char** argv){
   Mat bw = gray2binary(gray);
   vector<Rect> tables = detect_tables(bw);
   for (Rect& table : tables){
-    vector<Rect> cells = detect_cells(bw, table);
-    //should be cells instead of tables
-    vector<string> content = textbox_content(bw, tables);   
-    for (string s : content){
+    vector<Rect> cells = detect_cells(bw, table);    
+    vector<string> content = textbox_content(bw, cells);
+    /*r (string s : content){
       cout << s << endl;
-    }
-    //find_grid(cells, content);
+      }*/
+    find_grid(cells, content);
   }
   return 0;
 }

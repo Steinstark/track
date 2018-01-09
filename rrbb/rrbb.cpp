@@ -10,30 +10,37 @@
 #include "mlc.hpp"
 #include "noise.hpp"
 #include "segment.hpp"
+#include "utility.hpp"
 
 using namespace std;
 using namespace cv;
 
-Mat gray2binary(const Mat& gray){
-  Mat bw;
-  adaptiveThreshold(~gray, bw, 255, CV_ADAPTIVE_THRESH_GAUSSIAN_C,THRESH_BINARY, 15, -2);
-  return bw;
+vector<Rect> mat2rects(Mat& blob){
+  Mat cc, stats, centroids;
+  int labels = connectedComponentsWithStats(blob, cc, stats, centroids, 8, CV_32S);
+  vector<ComponentStats> components;
+  vector<Rect> tables;
+  components.push_back(stats2component(stats, 0));
+  for (int i = 1; i < labels; i++){
+    ComponentStats cs = stats2component(stats, i);
+    tables.push_back(cs.r);
+  }
+  return tables;
 }
 
-//TODO
-//add non-dummy return
-
-vector<Rect> detect_tables(string filename){
-  Mat img = imread(filename.c_str(), IMREAD_GRAYSCALE);  
-  if (!img.data)
-    cerr << "Problem loading image. " << endl;
-  Mat text = gray2binary(img);
+//img in grayscale
+vector<Rect> detect_tables(Mat& text){
   Mat nontext(text.size(), CV_8UC1, Scalar(0));
   heuristic_filter(text, nontext);
   multi_level_analysis(text, nontext);
   multi_level_classification(text, nontext);
   remove_noise(text, nontext);
-  segment(text, nontext);
-  vector<Rect> v;
-  return v;
+  Mat tableBlob = segment(text, nontext);
+  vector<Rect> tables = mat2rects(tableBlob);
+  /*  for (Rect& table : tables){
+    rectangle(text, table, Scalar(255));
+  }
+  imshow("table text image", text);
+  waitKey(0);*/
+  return tables;
 }

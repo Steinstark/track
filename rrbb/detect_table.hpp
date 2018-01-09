@@ -3,5 +3,5 @@
 
 #include <opencv2/opencv.hpp>
 
-std::vector<cv::Rect> detect_tables(std::string filename);
+std::vector<cv::Rect> detect_tables(cv::Mat& text);
 #endif

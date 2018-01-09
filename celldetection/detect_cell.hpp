@@ -6,5 +6,5 @@
 #include <vector>
 #include <string>
 
-std::vector<cv::Rect> detect_cells(std::string filename, cv::Rect r);
+std::vector<cv::Rect> detect_cells(const cv::Mat& bw, cv::Rect r);
 #endif

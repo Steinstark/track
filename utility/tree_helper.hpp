@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <opencv2/opencv.hpp>
+#include <functional>
 #include "RTree.h"
 
 void insert2tree(RTree<int, int, 2, float>& tree, const cv::Rect& r, int i);
@@ -10,5 +11,7 @@ void insert2tree(RTree<int, int, 2, float>& tree, const cv::Rect& r, int i);
 int search_tree(RTree<int, int, 2, float>& tree, cv::Rect r, std::vector<int>& vec);
 
 int search_tree(RTree<int, int, 2, float>& tree, cv::Rect r);
+
+int search_tree(RTree<int, int, 2, float>& tree, cv::Rect r, int& index, bool (*f)(int, void*));
 
 #endif

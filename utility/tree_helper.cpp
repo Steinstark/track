@@ -26,3 +26,9 @@ int search_tree(RT& tree, Rect r){
   vector<int> junk;
   return search_tree(tree, r, junk);
 }
+
+int search_tree(RT& tree, Rect r, int& index, bool (*f)(int, void*)){
+  int tl[] = {r.x, r.y};
+  int br[] = {r.br().x, r.br().y};
+  return tree.Search(tl, br, f, (static_cast<void*>(&index)));
+}

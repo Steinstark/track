@@ -19,10 +19,6 @@ void move2(Mat& from, Mat& to, const Mat& cc, int i){
   from = from & ~mask;
 }
 
-Rect pos2rect(int l, int t, int r, int b){
-  return Rect(l, t, r-l, b-t);
-}
-
 Rect stats2rect(const Mat& stats, int i){
   int left = stats.at<int>(i, CC_STAT_LEFT);
   int top = stats.at<int>(i, CC_STAT_TOP);

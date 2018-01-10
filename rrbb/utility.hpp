@@ -8,8 +8,6 @@ void move2(cv::Mat& from, cv::Mat& to, const cv::Mat& cc, int i);
 
 cv::Rect stats2rect(const cv::Mat& stats, int i);
 
-cv::Rect pos2rect(int l, int t, int r, int b);
-
 void displayHist(std::string str, const cv::Mat& img);
 
 struct Line{

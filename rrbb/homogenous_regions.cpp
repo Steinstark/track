@@ -3,6 +3,7 @@
 #include <utility>
 #include "homogenous_regions.hpp"
 #include "utility.hpp"
+#include "util.hpp"
 
 using namespace std;
 using namespace cv;

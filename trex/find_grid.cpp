@@ -1,139 +1,83 @@
+#include "find_grid.hpp"
+
 #include <algorithm>
 #include <vector>
 #include <string>
-#include <set>
-#include <map>
-#include <iterator>
-
+#include <utility>
+#include <functional>
 #include <opencv2/opencv.hpp>
-#include "find_grid.hpp"
+#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/ordered_index.hpp>
+#include <boost/multi_index/identity.hpp>
+#include <boost/multi_index/member.hpp>
+#include "RTree.h"
+#include "util.hpp"
+#include "tree_helper.hpp"
 
 using namespace std;
+using namespace std::placeholders;
 using namespace cv;
+using namespace boost::multi_index;
 
-using mapiv = map<int, vector<int> >;
+using IndexPair = pair<int, int>;
+using RT = RTree<int, int, 2, float>;
 
-bool compareRect(const Rect& a, const Rect& b){
-  return a.x <= b.br().x && b.x <= a.br().x;
-}
+struct NodeElement{
+  int a, b, index;
+  NodeElement(int a, int b, int index): a(a), b(b), index(index){}
+};
 
-template<typename Map> typename Map::const_iterator 
-greatest_less(Map const& m, typename Map::key_type const& k) {
-  typename Map::const_iterator it = m.lower_bound(k);    
-  if(it == m.begin()) {
-    return it;
-  }
-  return --it;
-}
+using NodeElementDB = multi_index_container<
+  NodeElement,
+  indexed_by<
+    ordered_non_unique<member<NodeElement, int, &NodeElement::a>, less<int> >,
+    ordered_unique<member<NodeElement, int, &NodeElement::index>, less<int> >
+    >
+  >;
 
-template<typename Map> typename Map::iterator 
-greatest_less(Map & m, typename Map::key_type const& k) {
-  typename Map::iterator it = m.lower_bound(k);
-  if(it == m.begin()) {
-    return it;
-  }
-  return --it;
-  }
-
-//Take a function as input to get width or heigth
-mapiv overlapping(multimap<int, int>& tree, vector<Rect>& boundingBoxes, function<int(Rect)> val){
-  mapiv overlap;
-  int left = tree.begin()->first;
-  int right = left;
-  vector<int> a0;
-  for (auto p : tree){
-    int ll = p.first;
-    int lr = p.first + val(boundingBoxes[p.second]);
-    if (ll <= right && lr >= left){
-      left = min(left, ll);
-      right = max(right, lr);
-      a0.push_back(p.second);
+vector<int> dimGrid(NodeElementDB& db){
+  vector<int> dimVal(db.size());
+  auto& dbSet = db.get<0>();
+  auto it = dbSet.begin();
+  int a = it->a, b = it->b, gridIndex = 0;
+  while (it != dbSet.end()){
+    if (it->a <= b){
+      dimVal[it->index] = gridIndex;
+      if (it->b > b){
+	b = it->b;
+      }
+      it++;
     }else{
-      sort(a0.begin(), a0.end());
-      overlap.insert({left, a0});
-      a0.clear();
-      a0.push_back(p.second);
-      left = ll;
-      right = lr;
+      a = it->a;
+      b = it->b;
+      gridIndex++;
     }
   }
-  if (overlap.lower_bound(left) == overlap.end()){
-    sort(a0.begin(), a0.end());
-    overlap.insert({left, a0});
-  }
-  return overlap;
+  return dimVal;
 }
 
-void split(mapiv& cols,mapiv& rows, vector<Rect>& boundingBoxes, vector<string>& text){
-  int length = boundingBoxes.size();
-  for (int i = 0; i < length; i++){
-    Rect r = boundingBoxes[i];
-    Point tl = r.tl();
-    Point br = r.br();
-    auto itlow_y = rows.lower_bound(br.y+1);
-    if (itlow_y == rows.end())
-      continue;
-    auto itlow_x = greatest_less(cols, tl.x);
-    vector<int> intersect;
-    set_intersection(itlow_y->second.begin(), itlow_y->second.end(),
-		     itlow_x->second.begin(), itlow_x->second.end(),
-		     back_inserter(intersect));
-    vector<int> overlap_index;
-    for (int j= 0; j < intersect.size(); j++){      
-      if (compareRect(r, boundingBoxes[intersect[j]])){
-	overlap_index.push_back(intersect[j]);
-      }
-    }
-    if (overlap_index.size() > 1){
-      Rect a0 = boundingBoxes[overlap_index[0]];
-      boundingBoxes[i] = Rect(a0.x,r.y, a0.width,r.height);
-      for (int j = 1; j < overlap_index.size(); j++){
-	a0 = boundingBoxes[overlap_index[j]];	
-	boundingBoxes.push_back(Rect(a0.x, r.y, a0.width, r.height));
-	text.push_back(text[i]);
-      }
-    }
-  }
-}
-
-//IMPROVEMENT
-//detect headers ahead of the overlap
-vector<vector<string> > find_grid(vector<Rect> boundingBoxes,
-				  vector<string> text)
+vector<IndexPair> gridify(NodeElementDB& dbCol, NodeElementDB& dbRow)
 {
-  multimap<int, int> xtree;
-  multimap<int, int> ytree;
-  for (int i = 0; i < boundingBoxes.size(); i++){
-    Rect r = boundingBoxes[i];
-    xtree.insert({r.x, i});
-    ytree.insert({r.y, i});
+  vector<int> first = dimGrid(dbCol);
+  vector<int> second = dimGrid(dbRow);
+  int n = dbCol.size();
+  vector<IndexPair> grid(n);
+  for (int i = 0; i < n; i++){
+    grid[i].first = first[i];
+    grid[i].second = second[i];
   }
-  mapiv cols = overlapping(xtree, boundingBoxes, [](const Rect& r){return r.width;});
-  mapiv rows = overlapping(ytree, boundingBoxes, [](const Rect& r){return r.height;});  
-  split(cols, rows, boundingBoxes, text);
-  xtree.clear();
-  ytree.clear();
-  for (int i = 0; i < boundingBoxes.size(); i++){
-    Rect r = boundingBoxes[i];
-    xtree.insert({r.x, i});
-    ytree.insert({r.y, i});
+  return grid;
+}
+
+vector<IndexPair> find_grid(vector<Rect>& bb, vector<string>& text){
+  vector<Cell> table;
+  NodeElementDB dbCol, dbRow;
+  for (int i = 0; i < bb.size(); i++){
+    Rect r =  bb[i];
+    Point br = r.br();
+    dbCol.insert(NodeElement(r.x, br.x, i));
+    dbRow.insert(NodeElement(r.y, br.y, i));
   }
-  cols = overlapping(xtree, boundingBoxes, [](const Rect& r){return r.width;});
-  rows = overlapping(ytree, boundingBoxes, [](const Rect& r){return r.height;});  
-  vector<vector<string> > table(cols.size(), vector<string>(rows.size(),""));  
-  int i = 0, j;
-  for (auto c : cols){
-    j = 0;
-    for (auto r: rows){
-      vector<int> intersect;
-      set_intersection(c.second.begin(), c.second.end(),
-		       r.second.begin(), r.second.end(), back_inserter(intersect));
-      for (int k = 0; k < intersect.size(); k++){
-	table[i][j] += text[intersect[k]];
-      }
-      j++;
-    }    
-    i++;
-  }  
-  return table;
+  vector<IndexPair> grid = gridify(dbCol, dbRow);
+  return grid;
 }

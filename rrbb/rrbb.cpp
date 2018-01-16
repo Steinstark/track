@@ -32,8 +32,8 @@ vector<Rect> mat2rects(Mat& blob){
 vector<Rect> detect_tables(Mat& text){
   Mat nontext(text.size(), CV_8UC1, Scalar(0));
   heuristic_filter(text, nontext);
-  multi_level_analysis(text, nontext);
-  multi_level_classification(text, nontext);
+  //multi_level_analysis(text, nontext);
+  //multi_level_classification(text, nontext);
   remove_noise(text, nontext);
   Mat tableBlob = segment(text, nontext);
   vector<Rect> tables = mat2rects(tableBlob);

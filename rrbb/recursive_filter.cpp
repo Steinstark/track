@@ -148,7 +148,7 @@ vector<double> getMeans(NodeDB& nodes){
   return mean;
 }
 
-double getMean(vector<int> v){
+double getMean(vector<int>& v){
   double mean = 0;
   for (int i = 0; i < v.size(); i++){
     mean += v[i];
@@ -196,7 +196,7 @@ SpaceNode create_space(RT& tree, const vector<Rect>& bb, int i){
 
 //TODO
 //Median and mean isn't updated properly
-vector<int> classify_elements(RT& tree, const vector<int>& se, vector<Rect> bb){
+vector<int> classify_elements(RT& tree, const vector<int>& se, const vector<Rect>& bb){
   vector<SpaceNode> space;
   for (int i = 0; i < bb.size(); i++){
     SpaceNode sn = create_space(tree, bb, i);
@@ -282,7 +282,7 @@ bool recursive_filter(Mat& text, Mat& nontext){
   NodeDB nodes;
   for (int i = 1; i < labels; i++){
     ComponentStats cs = stats2component(stats, i);
-    bb.push_back(cs.r);
+    bb[i] = cs.r;
     nodes.insert({cs.area, bb[i].width, bb[i].height, i});
     insert2tree(tree, bb[i], i);
   }

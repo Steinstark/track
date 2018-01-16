@@ -5,13 +5,18 @@
 #include <string>
 #include <utility>
 #include <opencv2/opencv.hpp>
+#include <iostream>
 
+enum CellType{TITLE, DATA};
 
 struct Cell{
-  std::string type, text;
-  std::pair<int,int> xSpan, ySpan;    
+  CellType type;
+  std::pair<int,int> xSpan, ySpan;
+  cv::Rect rect;
+  Cell(CellType type, std::pair<int, int> xSpan, std::pair<int, int> ySpan, cv::Rect rect): type(type), xSpan(xSpan), ySpan(ySpan), rect(rect){};
+  friend std::ostream& operator<<(std::ostream& os, const Cell& c);
 };
 
-std::vector<std::pair<int,int>> find_grid(std::vector<cv::Rect>& bb, std::vector<std::string>& text);
+std::vector<Cell> find_grid(std::vector<cv::Rect>& bb);
   
 #endif

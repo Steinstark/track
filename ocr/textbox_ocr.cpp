@@ -2,6 +2,7 @@
 #include <leptonica/allheaders.h>
 #include <opencv2/opencv.hpp>
 #include "textbox_ocr.hpp"
+#include "util.hpp"
 
 using namespace std;
 using namespace cv;
@@ -24,9 +25,10 @@ vector<string> textbox_content(const Mat& bw, const vector<Rect>& rv){
     fprintf(stderr, "Could not initialize tesseract.\n");
     exit(1);
   }
+  int dpi = pix2a4dpi(bw.cols, bw.rows);
   Pix *image = mat8ToPix(bw);
   api->SetImage(image);
-  api->SetSourceResolution(150);
+  api->SetSourceResolution(dpi);
   vector<string> v; 
   for (Rect r : rv){
     api->SetRectangle(r.x, r.y, r.width, r.height);

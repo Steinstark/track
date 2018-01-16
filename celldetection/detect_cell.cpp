@@ -11,10 +11,9 @@ std::vector<Rect> detect_cells(const Mat& bw, Rect r){
   //IMPROVEMENT
   //remove magic number
   Mat mask;
-  Mat horizontalStructure = getStructuringElement(MORPH_RECT, Size(10,1));
-  Mat verticalStructure = getStructuringElement(MORPH_RECT, Size(1,3));  
-  dilate(tableImage, mask, horizontalStructure, Point(-1,-1));
-  erode(mask, mask, verticalStructure, Point(-1,-1));
+  Mat element = getStructuringElement(MORPH_RECT, Size(20,5));
+  dilate(tableImage, mask, element, Point(-1,-1));
+  //erode(mask, mask, element, Point(-1,-1));
   
   //imshow("img", mask);
   //waitKey(0);  
@@ -28,14 +27,13 @@ std::vector<Rect> detect_cells(const Mat& bw, Rect r){
     approxPolyDP( Mat(contours[i]), contours_poly[i], 3, true);
     boundRect[i] = boundingRect( Mat(contours_poly[i])) + r.tl();
   }
-  /*Mat drawing = Mat::zeros(mask.size(), CV_8UC3 );
-  RNG rng(12345);
+  Mat drawing = bw.clone();
+  Scalar color = Scalar(255);
   for (size_t i = 0; i < contours.size(); i++){
-    Scalar color = Scalar(rng.uniform(0,255), rng.uniform(0,255), rng.uniform(0,22));
-    drawContours(drawing,contours_poly, (int)i, color, 1,8, vector<Vec4i>(), 0, Point() );
-    rectangle(tableImage, boundRect[i].tl(), boundRect[i].br(), color, 2,8,0);
+    //    drawContours(drawing,contours_poly, (int)i, color, 1,8, vector<Vec4i>(), 0, Point() );
+    rectangle(drawing, boundRect[i], color);
   }
-  imshow("img", tableImage);
-  waitKey(0);*/
+  //imshow("img", drawing);
+  //  waitKey(0);
   return boundRect;
 }

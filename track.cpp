@@ -48,12 +48,18 @@ int main(int argc, char** argv){
   Mat bw = gray2binary(gray);
   vector<Rect> tables = detect_tables(bw);
   for (Rect& table : tables){
-    vector<Rect> cells = detect_cells(bw, table);    
-    vector<string> content = textbox_content(bw, cells);
-    /*r (string s : content){
-      cout << s << endl;
-      }*/
-    find_grid(cells, content);
+    vector<Rect> cells = detect_cells(bw, table);
+    auto grid =  find_grid(cells);
+    vector<Rect> refined_cells;
+    for (int i = 0; i < grid.size(); i++){
+      refined_cells.push_back(grid[i].rect);
+    }
+    vector<string> content = textbox_content(bw, refined_cells);
+    for (int i = 0; i < content.size(); i++){
+      cout << grid[i] << " Text: " << content[i] << endl;
+    }
+    cout << endl;
   }
+
   return 0;
 }

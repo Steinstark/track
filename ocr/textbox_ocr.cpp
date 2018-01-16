@@ -17,14 +17,13 @@ Pix *mat8ToPix(const cv::Mat& mat8)
   return pixd;
 }
 
-vector<string> textbox_content(const Mat& bw, const vector<cv::Rect>& rv){
+vector<string> textbox_content(const Mat& bw, const vector<Rect>& rv){
   const string path = "/usr/share/tesseract-ocr/tessdata";
   tesseract::TessBaseAPI *api = new tesseract::TessBaseAPI();
   if (api->Init(path.c_str(), "eng")) {
     fprintf(stderr, "Could not initialize tesseract.\n");
     exit(1);
   }
-  
   Pix *image = mat8ToPix(bw);
   api->SetImage(image);
   api->SetSourceResolution(150);

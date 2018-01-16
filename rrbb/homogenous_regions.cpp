@@ -48,7 +48,7 @@ int split(Mat& hist){
   vector<Line> text, space;
   find_lines(hist, text, space);
   if (space.empty()){
-    cout << "Can't split region without space. Returning split 0" << endl;
+    //cout << "Can't split region without space. Returning split 0" << endl;
     return 0;
   }
   int spaceIndex = isOutlier(space);
@@ -61,7 +61,7 @@ int split(Mat& hist){
       return (space[textIndex-1].l + space[textIndex-1].r)/2;
     return (space[textIndex].l + space[textIndex].r)/2;
   }
-  cout << "Region can't be split. Returning split 0" << endl;
+  //cout << "Region can't be split. Returning split 0" << endl;
   return 0;
 }
 

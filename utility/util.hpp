@@ -6,5 +6,6 @@
 
 bool fileHasType(std::string file, std::string  extension);
 cv::Rect pos2rect(int l, int t, int r, int b);
+int pix2a4dpi(int xPixels, int yPixels);
 
 #endif

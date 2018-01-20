@@ -37,7 +37,6 @@ int getQ3(const vector<Line>& v){
   return v[pos].length();
 }
 
-
 //TODO
 //Find and fix errors of text blobbing and segmentation
 Mat text_segment(Mat& text){
@@ -92,9 +91,6 @@ int  manySmallRect(Mat& img, const Rect& r, RT& tree){
   return area;
 }
 
-
-
-//
 Mat table_segment(Mat& nontext, Mat& text, CompDB&  db, const Mat& cc, RT& t_tree, RT& nt_tree){
   auto&p = db.get<3>();
   auto it = p.begin();
@@ -159,6 +155,11 @@ Mat segment(Mat& text, Mat& nontext){
   Mat separatorBlob = separator_segment(nontext, db, nt_cc, t_tree);
   separatorBlob = separatorBlob | lineBlob;
   Mat imageBlob = image_segment(nontext, db, nt_cc);
+  /*  imshow("text", text);
+  imshow("tableBlob", tableBlob);
+  imshow("separatorBlob", separatorBlob);
+  imshow("imageBlob", imageBlob);
+  waitKey(0);*/
   return tableBlob;
 }
 

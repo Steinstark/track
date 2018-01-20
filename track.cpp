@@ -24,12 +24,6 @@ Mat pdf2mat(string pdf){
   return opencvImage;
 }
 
-Mat gray2binary(const Mat& gray){
-  Mat bw;
-  adaptiveThreshold(~gray, bw, 255, CV_ADAPTIVE_THRESH_GAUSSIAN_C,THRESH_BINARY, 15, -2);
-  return bw;
-}
-
 int main(int argc, char** argv){
   if (argc != 2){
     cout << "Invalid number of arguments" << endl;
@@ -60,6 +54,5 @@ int main(int argc, char** argv){
     }
     cout << endl;
   }
-
   return 0;
 }

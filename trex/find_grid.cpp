@@ -25,6 +25,24 @@ using namespace boost::multi_index;
 using IndexPair = pair<int, int>;
 using RT = RTree<int, int, 2, float>;
 
+struct Part{
+  int maxIndex, voteCount, maxLength;
+  map<int,int> visited;
+  Part(): voteCount(0), maxLength(0){}
+  void update(int gridIndex, int length, int bbIndex){
+    visited[gridIndex]++;
+    if (visited[gridIndex] == 2)
+      voteCount++;
+    if (length > maxLength){
+      maxLength = length;
+      maxIndex = bbIndex;
+    }
+  }
+  bool majorityRule(){
+    return (double)voteCount/visited.size();
+  }
+};
+
 using NodeElementDB = multi_index_container<
   NodeElement,
   indexed_by<
@@ -101,32 +119,14 @@ map<IndexPair, Rect>  merge(map<int, IndexPair>& grid, vector<Rect>& bb){
   return merged;
 }
 
-
-
-struct Part{
-  int maxIndex, voteCount, maxLength;
-  map<int,int> visited;
-  Part(): voteCount(0), maxLength(0){}
-  void update(int gridIndex, int length, int bbIndex){
-    visited[gridIndex]++;
-    if (visited[gridIndex] == 2)
-      voteCount++;
-    if (length > maxLength){
-      maxLength = length;
-      maxIndex = bbIndex;
-    }
-  }
-  bool majorityRule(){
-    return (double)voteCount/visited.size();
-  }
-};
-
-void findHeaders(map<int, Part>& data, set<int>& headerIndex){
+set<int> findHeaders(map<int, Part>& data){
+  set<int> headerIndex;
   for (auto it = data.begin(); it != data.end(); it++){
     if (it->second.majorityRule()){
       headerIndex.insert(it->second.maxIndex);
     }
   }
+  return headerIndex;
 }
 
 set<int> getHeaderIndex(map<int, IndexPair>& grid, vector<Rect>& bb){
@@ -135,10 +135,9 @@ set<int> getHeaderIndex(map<int, IndexPair>& grid, vector<Rect>& bb){
 
   for (auto p : grid){
     cols[p.second.first].update(p.second.second, bb[p.first].width, p.first);
-    //    rows[p.second.second].update(p.second.first, bb[p.first].height, p.first);
+    //rows[p.second.second].update(p.second.first, bb[p.first].height, p.first);
   }
-  set<int> headerIndex;
-  findHeaders(cols, headerIndex);
+  set<int> headerIndex = findHeaders(cols);
   //findHeaders(rows, headerIndex);
   return headerIndex;
 }
@@ -201,4 +200,3 @@ vector<Cell> find_grid(vector<Rect>& bb){
   }
   return cells;
 }
-

@@ -5,6 +5,7 @@
 #include <vector>
 #include <functional>
 #include <type_traits>
+#include <cmath>
 
 bool fileHasType(std::string file, std::string  extension);
 
@@ -18,10 +19,10 @@ typename std::enable_if<std::is_arithmetic<T>::value, double>::type mean(std::ve
 }
 
 template <typename V, typename T>
-typename std::enable_if<std::is_arithmetic<T>::value, double>::type variance(std::vector<V> v, std::function<V(T)> f){
-  double m2 = pow(mean(v, f),2);
-  double m1 = mean(v, [&f](T e){ return pow(f(e),2);});
+typename std::enable_if<std::is_arithmetic<T>::value, double>::type variance(std::vector<V>& v, std::function<T(V)> f){
+  double m2 = pow(mean<V,T>(v, f),2);
+  double m1 = mean<V, T>(v, [&f](V e){return pow(f(e),2);});
   return m1 - m2;
 }
-  
+ 
 #endif

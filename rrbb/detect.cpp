@@ -3,6 +3,7 @@
 #include <opencv2/opencv.hpp>
 #include "utility.hpp"
 #include "image_primitives.hpp"
+#include "image_util.hpp"
 
 using namespace std;
 using namespace cv;
@@ -14,8 +15,7 @@ bool candidateRLT(ImageMeta& im, ComponentStats& cs){
     containsManyTextElements(im, cs);
 }
 
-bool verifyRLT(Mat& text, ImageMeta& im, ComponentStats& cs){
-  Mat region(text(cs.r));
+bool verifyRLT(Mat& region, ImageMeta& im, ComponentStats& cs){
   vector<TextLine> tls;
   return hasLowDensity(cs) &&
     regionIsRectangle(cs) &&
@@ -32,18 +32,24 @@ vector<int> findRLT(Mat& text, vector<ComponentStats>& data, ImageMeta& im){
       candidates.push_back(i);
     }
   }
-  //skewcorrection
   vector<int> verified;
   for (int i = 0; i < candidates.size(); i++){
-    if (verifyRLT(text, im, data[candidates[i]])){
+    Mat skewedRegion = text(data[candidates[i]].r), correctedRegion;
+    double angle = counterRotAngle(skewedRegion);
+    rotate(skewedRegion, correctedRegion, angle);
+    if (verifyRLT(correctedRegion, im, data[candidates[i]])){
       verified.push_back(candidates[i]);
     }
   }
   return verified;
 }
 
+void findNRLT(Mat& text, vector<ComponentStats>& data, ImageMeta& im){
+  
+}
+
 vector<Rect> detect(Mat& text, Mat& nontext){
-  vector<ComponentStats> textData = statistics(nontext);
+  vector<ComponentStats> textData = statistics(text);
   vector<ComponentStats> nontextData = statistics(nontext);
   ImageMeta meta(text.cols, text.rows, textData, nontextData);
   vector<int> rlt = findRLT(text, nontextData, meta);
@@ -51,6 +57,6 @@ vector<Rect> detect(Mat& text, Mat& nontext){
   for (int i = 0; i < rlt.size(); i++){
     tables.push_back(nontextData[rlt[i]].r);
   }
-  //nrlt_find(tables);
+  findNRLT(text, nontextData, meta);
   return tables;
 }

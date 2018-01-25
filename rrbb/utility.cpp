@@ -1,6 +1,8 @@
 #include "utility.hpp"
 #include <algorithm>
+#include <vector>
 #include <opencv2/opencv.hpp>
+#include "tree_helper.hpp"
 
 using namespace std;
 using namespace cv;
@@ -31,6 +33,23 @@ ComponentStats stats2component(const Mat& stats, int i){
   Rect r = stats2rect(stats, i);
   int area = stats.at<int>(i, CC_STAT_AREA);
   return ComponentStats(r, area, i);
+}
+
+vector<ComponentStats> statistics(Mat& img){
+  Mat cc, stats, centroids;
+  int labels = connectedComponentsWithStats(img, cc, stats, centroids, 8, CV_32S);
+  vector<ComponentStats> components;
+  for (int i = i; i < labels; i++){
+    components.push_back(stats2component(stats, i-1)); 
+  }
+  return components;
+}
+
+ImageMeta::ImageMeta(int width, int height, std::vector<ComponentStats> text, std::vector<ComponentStats> nontext): width(width), height(height){
+  for (int i = 0; i < text.size(); i++)
+    insert2tree(t_tree, text[i].r, i);
+  for (int i = 0; i < nontext.size(); i++)
+    insert2tree(nt_tree, nontext[i].r, i);    
 }
 
 void displayHist(string str, const Mat& img){

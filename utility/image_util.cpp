@@ -6,7 +6,7 @@ using namespace cv;
 double counterRotAngle(Mat& img){
   vector<vector<Point> > contours;
   findContours(img, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
-  RotatedRect rr = minAreaRect(contours);
+  RotatedRect rr = minAreaRect(contours[0]);
   Rect bb = rr.boundingRect();
   Point2f cp = rr.center;
   double dxl = cp.x - bb.x;

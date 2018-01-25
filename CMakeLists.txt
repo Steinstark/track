@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 
 project(track)
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
@@ -18,8 +18,10 @@ add_subdirectory(rrbb)
 add_subdirectory(celldetection)
 add_subdirectory(ocr)
 add_subdirectory(trex)
+add_subdirectory(RTree)
 
 add_executable(track ${PROJECT_SOURCE_DIR}/track.cpp)
 
+
 target_compile_options(track PUBLIC ${MAGICK_CFLAGS_OTHER})
-target_link_libraries(track detect_table detect_cell textbox_content find_grid util tree_helper leptonica tesseract ${OpenCV_LIBS} ${MAGICK_LIBRARIES})
+target_link_libraries(track RTree detect_table detect_cell textbox_content find_grid util tree_helper leptonica tesseract ${OpenCV_LIBS} ${MAGICK_LIBRARIES})

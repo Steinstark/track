@@ -1,6 +1,8 @@
 #include "util.hpp"
 #include <cmath>
 #include <functional>
+#include <type_traits>
+#include <vector>
 
 using namespace std;
 using namespace cv;
@@ -19,29 +21,6 @@ int pix2a4dpi(int xPixels, int yPixels){
   return (xDPI + yDPI)/2;
 }
 
-template <
-  typename V,
-  typename T,
-  typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type
-  >
-double mean(vector<T> v, function<int(T)> f){
-  int val = 0;
-  for (int i = 0; i < v.size(); i++){
-    val += f(v[i]);
-  }
-  return (double)val/v.size();
-}
-
-template <
-  typename V,
-  typename T,
-  typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type
-  >
-double variance(vector<T> v, function<int(T)> f){
-  double m2 = pow(mean(v, f),2);
-  double m1 = mean(v, [&f](T e){ return pow(f(e),2);});
-  return m1 - m2;
-}
 
 Mat gray2binary(const Mat& gray){
   Mat bw;

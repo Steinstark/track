@@ -52,8 +52,6 @@ bool verticalArrangement(Mat& textTable, vector<TextLine>& lines){
   reduce(textTable, hist, 0, CV_REDUCE_SUM, CV_64F);
   find_lines(hist, text, space);
   double ms = mean<Line, int>(space, [](Line l){return l.length();});
-  return true;
-  /*
   double mes = mean<TextLine, double>(lines, [](TextLine tl){return  tl.getSpace();});
   double met = mean<TextLine, double>(lines, [](TextLine tl){return tl.getMeanLength();});
   vector<Rect> bb(lines.size());
@@ -66,7 +64,7 @@ bool verticalArrangement(Mat& textTable, vector<TextLine>& lines){
   return (lv < met &&
 	  cv < met &&
 	  rv < met &&
-	  ms > mes);*/
+	  ms > mes);
 }
 
 bool hasLowDensity(ComponentStats& cs){

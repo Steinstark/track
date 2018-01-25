@@ -10,6 +10,7 @@
 #include "tree_helper.hpp"
 #include "recursive_filter.hpp"
 #include "utility.hpp"
+#include "image_util.hpp"
 
 using namespace std;
 using namespace cv;

@@ -6,7 +6,7 @@
 #include "RTree.h"
 #include "util.hpp"
 
-void move2(cv::Mat& from, cv::Mat& to, const cv::Mat& cc, int i);
+
 
 cv::Rect stats2rect(const cv::Mat& stats, int i);
 

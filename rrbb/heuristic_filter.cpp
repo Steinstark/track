@@ -3,6 +3,7 @@
 #include <vector>
 #include "RTree.h"
 #include "utility.hpp"
+#include "image_util.hpp"
 #include "tree_helper.hpp"
 
 using namespace std;

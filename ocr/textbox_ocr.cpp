@@ -2,7 +2,7 @@
 #include <leptonica/allheaders.h>
 #include <opencv2/opencv.hpp>
 #include "textbox_ocr.hpp"
-#include "util.hpp"
+#include "image_util.hpp"
 
 using namespace std;
 using namespace cv;

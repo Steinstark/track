@@ -2,8 +2,8 @@
 #include <queue>
 #include <utility>
 #include "homogenous_regions.hpp"
+#include "image_util.hpp"
 #include "utility.hpp"
-#include "util.hpp"
 
 using namespace std;
 using namespace cv;

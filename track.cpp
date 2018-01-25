@@ -7,6 +7,7 @@
 #include "textbox_ocr.hpp"
 #include "find_grid.hpp"
 #include "util.hpp"
+#include "image_util.hpp"
 
 #include <Magick++.h> 
 

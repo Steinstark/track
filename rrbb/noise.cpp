@@ -4,6 +4,7 @@
 #include "RTree.h"
 #include "tree_helper.hpp"
 #include "utility.hpp"
+#include "image_util.hpp"
 
 using namespace std;
 using namespace cv;

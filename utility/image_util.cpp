@@ -4,8 +4,10 @@ using namespace std;
 using namespace cv;
 
 double counterRotAngle(Mat& img){
-  vector<vector<Point> > contours;
-  findContours(img, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+  vector<vector<Point> > contours;  
+  findContours(img, contours, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
+  if (contours.empty())
+    return 0;
   RotatedRect rr = minAreaRect(contours[0]);
   Rect bb = rr.boundingRect();
   Point2f cp = rr.center;

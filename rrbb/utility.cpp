@@ -13,10 +13,6 @@ ComponentStats::ComponentStats(Rect r, int area, int i) : r(r), area(area),  ind
   hwratio = (double)min(r.width, r.height)/max(r.width, r.height);
 }
 
-Mat deskew(Mat& img){
-  
-}
-
 Rect stats2rect(const Mat& stats, int i){
   int left = stats.at<int>(i, CC_STAT_LEFT);
   int top = stats.at<int>(i, CC_STAT_TOP);
@@ -25,10 +21,12 @@ Rect stats2rect(const Mat& stats, int i){
   return Rect(left, top, width, height);
 }
 
-ComponentStats stats2component(const Mat& stats, int i){
-  Rect r = stats2rect(stats, i);
-  int area = stats.at<int>(i, CC_STAT_AREA);
-  return ComponentStats(r, area, i);
+ComponentStats stats2component(const Mat& stats, int statsIndex, int compIndex){
+  if (compIndex < 0)
+    compIndex = statsIndex;
+  Rect r = stats2rect(stats, statsIndex);
+  int area = stats.at<int>(statsIndex, CC_STAT_AREA);
+  return ComponentStats(r, area, compIndex);
 }
 
 vector<ComponentStats> statistics(Mat& img){
@@ -36,7 +34,7 @@ vector<ComponentStats> statistics(Mat& img){
   int labels = connectedComponentsWithStats(img, cc, stats, centroids, 8, CV_32S);
   vector<ComponentStats> components;
   for (int i = 1; i < labels; i++){
-    components.push_back(stats2component(stats, i-1)); 
+    components.push_back(stats2component(stats, i, i-1)); 
   }
   return components;
 }
@@ -46,32 +44,6 @@ ImageMeta::ImageMeta(int width, int height, std::vector<ComponentStats> text, st
     insert2tree(t_tree, text[i].r, i);
   for (int i = 0; i < nontext.size(); i++)
     insert2tree(nt_tree, nontext[i].r, i);    
-}
-
-void displayHist(string str, const Mat& img){
-  int m = 0;
-  int length = max(img.rows, img.cols);
-  for (int i = 0; i < length; i++){
-    int val = img.at<double>(i);
-    m = max(m,val);
-  }
-  Mat hist;
-  if (img.rows > img.cols){
-    hist = Mat::zeros(img.rows, m+50, CV_8U);
-    for (int i = 0; i < img.rows; i++){
-      for (int j = 0; j < img.at<double>(i,0); j++){
-	hist.at<uchar>(i,j) = 255;
-      }
-    }
-  }else{
-    hist = Mat::zeros(m+50, img.cols, CV_8U);
-    for (int i = 0; i < img.cols; i++){
-      for (int j = 0; j < img.at<double>(0, i); j++){
-	hist.at<uchar>(j,i) = 255;
-      }
-    }
-  }
-  imshow(str, hist);
 }
 
 void find_lines(const Mat& hist, vector<Line>& text, vector<Line>& space){

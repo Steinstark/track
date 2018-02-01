@@ -32,3 +32,9 @@ int search_tree(RT& tree, Rect r, int& index, bool (*f)(int, void*)){
   int br[] = {r.br().x, r.br().y};
   return tree.Search(tl, br, f, (static_cast<void*>(&index)));
 }
+
+void remove(RT& tree, Rect r, int index){
+  int tl[] = {r.x, r.y};
+  int br[] = {r.br().x, r.br().y};
+  tree.Remove(tl, br, index);
+}

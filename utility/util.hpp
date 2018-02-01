@@ -24,5 +24,20 @@ typename std::enable_if<std::is_arithmetic<T>::value, double>::type variance(std
   double m1 = mean<V, T>(v, [&f](V e){return pow(f(e),2);});
   return m1 - m2;
 }
- 
+
+template <typename V, typename T>
+typename std::enable_if<std::is_arithmetic<T>::value, double>::type welford(std::vector<V> v, std::function<T(V)> f){
+  if (v.size() < 2)
+    return 0;
+  double mean = 0, m2 = 0;
+  for (int i = 0; i < v.size(); i++){
+    T  val = f(v[i]);
+    double delta = val - mean;
+    mean += delta / (i+1);
+    double delta2 = val - mean;
+    m2 += delta*delta2;
+  }
+  return sqrt(m2/(v.size()-1));
+}
+
 #endif

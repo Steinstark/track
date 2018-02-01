@@ -15,7 +15,7 @@ bool isHorizontalLine(ImageMeta& im, const ComponentStats& cs){
 }
 
 bool regionIsRectangle(const ComponentStats& cs){
-  return (cs.bb_area - cs.area)/(double)cs.bb_area > 0.9;
+  return (cs.bb_area - cs.area)/(double)cs.bb_area > 0.6;
 }
 
 bool isColorBlock(ImageMeta& im, const ComponentStats& cs){
@@ -43,7 +43,7 @@ bool manySmallRect(Mat& text, ComponentStats& cs){
     else
       return false;
   }
-  return (area+cs.area)/cs.bb_area >= 0.9;
+  return (area+cs.bb_area-cs.area)/(double)cs.bb_area >= 0.9;
 }
 
 bool verticalArrangement(Mat& textTable, vector<TextLine>& lines){
@@ -58,13 +58,11 @@ bool verticalArrangement(Mat& textTable, vector<TextLine>& lines){
   for (int i = 0; i < lines.size(); i++){
     bb[i] = lines[i].getBox();
   }
-  double lv = variance<Rect, int>(bb, [](Rect r){return r.x;});
-  double cv = variance<Rect, double>(bb, [](Rect r){return (r.x+r.br().x)*0.5;});
-  double rv = variance<Rect, int>(bb, [](Rect r){return r.br().x;});
-  return (lv < met &&
-	  cv < met &&
-	  rv < met &&
-	  ms > mes);
+  double lv = welford<Rect, int>(bb, [](Rect r){return r.x;});
+  double cv = welford<Rect, double>(bb, [](Rect r){return (r.x+r.br().x)*0.5;});
+  double rv = welford<Rect, int>(bb, [](Rect r){return r.br().x;});
+  int stupid = 0;
+  return lv < met && cv < met && rv < met && ms > mes;
 }
 
 bool hasLowDensity(ComponentStats& cs){
@@ -72,15 +70,14 @@ bool hasLowDensity(ComponentStats& cs){
 }
 
 
-bool noCut(ImageMeta& im, Rect r){
-  Rect left(r.x-1, r.y, 1, r.height);
-  Rect right(r.x+r.width, r.y, 1, r.height);
-  Rect top(r.x, r.y-1, r.width, 1);
-  Rect bottom(r.x, r.y+r.height, r.width, 1);
-  return !search_tree(im.t_tree, left) &&
-    !search_tree(im.t_tree, top) &&
-    !search_tree(im.t_tree, right) &&
-    !search_tree(im.t_tree, bottom);    
+bool noCut(ImageMeta& im, vector<ComponentStats>& textData, Rect r){
+  vector<int> hits;
+  search_tree(im.t_tree, r, hits);
+  for (int e : hits){
+    if ((r | textData[e].r).area() > r.area())
+      return false;
+  }
+  return true;
 }
 
 bool onlyText(ImageMeta& im, Rect r){

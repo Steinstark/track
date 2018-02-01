@@ -26,7 +26,7 @@ double TextLine::getSpace(){
   for (int i = 1; i < elements.size(); i++){
       val += elements[i].x-elements[i-1].br().x;
   }
-  return (double)val/(elements.size()-1);
+  return (double)val/(elements.size());
 }
 
 double TextLine::getMeanLength(){

@@ -30,11 +30,9 @@ bool verifyRLT(Mat& region,
     vector<TextLine> tls = linesInRegion(im, textData, cs.r);
     Mat tableCopy = region.clone();
     for (int i = 0; i < tls.size(); i++){
-      rectangle(tableCopy, tls[i].getBox()-cs.r.tl(), Scalar(255));
+      rectangle(tableCopy, tls[i].getBox()-cs.r.tl(), Scalar(255), CV_FILLED);
     }
-    imshow("textlines", tableCopy);
-    waitKey(0);
-    return verticalArrangement(region, tls);  
+    return verticalArrangement(tableCopy, tls);  
   }
   return false;
 }

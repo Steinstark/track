@@ -46,23 +46,47 @@ bool manySmallRect(Mat& text, ComponentStats& cs){
   return (area+cs.bb_area-cs.area)/(double)cs.bb_area >= 0.9;
 }
 
+vector<vector<TextLine> > partitionBlocks(vector<TextLine>& tls, vector<Line>& space){
+  int inf = 1000000;
+  map<int, int> table;
+  for (int i = 0; i < space.size(); i++){
+    table[space[i].l] = i;    
+  }
+  table[inf] = space.size();
+  vector<vector<TextLine> > partitions(space.size()+1, vector<TextLine>());
+  for (int i = 0; i < tls.size(); i++){
+    Rect r = tls[i].getBox();
+    auto it = table.upper_bound(r.x);
+    if (it != table.end()){
+      partitions[it->second].push_back(tls[i]);
+    }else
+      cout << "Left index is larger than " << inf << endl;
+  }
+  return partitions;
+}
+
+
 bool verticalArrangement(Mat& textTable, vector<TextLine>& lines){
   Mat hist;
   vector<Line> text, space;
   reduce(textTable, hist, 0, CV_REDUCE_SUM, CV_64F);
   find_lines(hist, text, space);
+  vector<vector<TextLine> > partitions = partitionBlocks(lines, space);
   double ms = mean<Line, int>(space, [](Line l){return l.length();});
-  double mes = mean<TextLine, double>(lines, [](TextLine tl){return  tl.getSpace();});
-  double met = mean<TextLine, double>(lines, [](TextLine tl){return tl.getMeanLength();});
-  vector<Rect> bb(lines.size());
-  for (int i = 0; i < lines.size(); i++){
-    bb[i] = lines[i].getBox();
+  for (int i = 0; i < partitions.size(); i++){    
+    double mes = mean<TextLine, double>(partitions[i], [](TextLine tl){return  tl.getSpace();});
+    double met = mean<TextLine, double>(partitions[i], [](TextLine tl){return tl.getMeanLength();});
+    vector<Rect> bb(partitions[i].size());
+    for (int j = 0;j < partitions[i].size(); j++){
+      bb[i] = partitions[i][j].getBox();
+    }
+    double lv = welford<Rect, int>(bb, [](Rect r){return r.x;});
+    double cv = welford<Rect, double>(bb, [](Rect r){return (r.x+r.br().x)*0.5;});
+    double rv = welford<Rect, int>(bb, [](Rect r){return r.br().x;});
+    if (lv >= met && cv >= met && rv >= met && ms <= mes)
+      return false;    
   }
-  double lv = welford<Rect, int>(bb, [](Rect r){return r.x;});
-  double cv = welford<Rect, double>(bb, [](Rect r){return (r.x+r.br().x)*0.5;});
-  double rv = welford<Rect, int>(bb, [](Rect r){return r.br().x;});
-  int stupid = 0;
-  return lv < met && cv < met && rv < met && ms > mes;
+  return true;
 }
 
 bool hasLowDensity(ComponentStats& cs){

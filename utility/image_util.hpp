@@ -1,6 +1,7 @@
 #ifndef IMAGE_UTIL_HPP
 #define IMAGE_UTIL_HPP
 
+#include <string>
 #include <opencv2/opencv.hpp>
 
 void move2(cv::Mat& from, cv::Mat& to, const cv::Mat& cc, int i);
@@ -19,4 +20,5 @@ int pix2a4dpi(int xPixels, int yPixels);
 
 cv::Mat gray2binary(const cv::Mat& gray);
 
+void displayHist(std::string str, const cv::Mat& img);
 #endif

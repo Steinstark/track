@@ -1,4 +1,5 @@
 #include "image_util.hpp"
+#include <cmath>
 
 using namespace std;
 using namespace cv;
@@ -13,6 +14,8 @@ double counterRotAngle(Mat& img){
   Point2f cp = rr.center;
   double dxl = cp.x - bb.x;
   double dxr = bb.br().x - cp.x;
+  if (abs(rr.angle) >= 90)
+    return 0;
   if ( dxl > dxr)
     return -rr.angle;
   return rr.angle;  
@@ -46,4 +49,30 @@ void move2(Mat& from, Mat& to, const Mat& cc, int i){
   mask = mask & from;
   to = to | mask;
   from = from & ~mask;
+}
+
+void displayHist(string str, const Mat& img){
+  int m = 0;
+  int length = max(img.rows, img.cols);
+  for (int i = 0; i < length; i++){
+    int val = img.at<double>(i);
+    m = max(m,val);
+  }
+  Mat hist;
+  if (img.rows > img.cols){
+    hist = Mat::zeros(img.rows, m+50, CV_8U);
+    for (int i = 0; i < img.rows; i++){
+      for (int j = 0; j < img.at<double>(i,0); j++){
+	hist.at<uchar>(i,j) = 255;
+      }
+    }
+  }else{
+    hist = Mat::zeros(m+50, img.cols, CV_8U);
+    for (int i = 0; i < img.cols; i++){
+      for (int j = 0; j < img.at<double>(0, i); j++){
+	hist.at<uchar>(j,i) = 255;
+      }
+    }
+  }
+  imshow(str, hist);
 }

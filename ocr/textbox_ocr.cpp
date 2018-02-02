@@ -29,14 +29,17 @@ vector<string> textbox_content(const Mat& bw, const vector<Rect>& rv){
   Pix *image = mat8ToPix(bw);
   api->SetImage(image);
   api->SetSourceResolution(dpi);
-  vector<string> v; 
+  vector<string> v;
+  char* outText;
   for (Rect r : rv){
     api->SetRectangle(r.x, r.y, r.width, r.height);
-    string s(api->GetUTF8Text());
+    outText = api->GetUTF8Text();
+    string s(outText);
     s.erase(remove(s.begin(), s.end(), '\n'), s.end());
-    v.push_back(s);    
+    v.push_back(s);
+    delete [] outText;
   }
   api->End();
-  pixDestroy(&image);  
+  pixDestroy(&image);
   return v;
 }

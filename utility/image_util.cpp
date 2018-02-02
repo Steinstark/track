@@ -25,7 +25,7 @@ double counterRotAngle(Mat& img){
   return rotAngle(minAreaRect(contours[0]));
 }
 
-double counterRotAngle(vector<Point> contour){
+double counterRotAngle(vector<Point>& contour){
   return rotAngle(minAreaRect(contour));  
 }
 

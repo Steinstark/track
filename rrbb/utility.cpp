@@ -39,7 +39,7 @@ vector<ComponentStats> statistics(Mat& img){
   return components;
 }
 
-ImageMeta::ImageMeta(int width, int height, std::vector<ComponentStats> text, std::vector<ComponentStats> nontext): width(width), height(height){
+ImageMeta::ImageMeta(int width, int height, vector<ComponentStats>& text, vector<ComponentStats>& nontext): width(width), height(height){
   for (int i = 0; i < text.size(); i++)
     insert2tree(t_tree, text[i].r, i);
   for (int i = 0; i < nontext.size(); i++)

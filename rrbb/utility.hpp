@@ -26,7 +26,7 @@ struct ComponentStats{
 struct ImageMeta{
   int width, height;
   RTree<int, int, 2, float> t_tree, nt_tree;
-  ImageMeta(int width, int height, std::vector<ComponentStats> text, std::vector<ComponentStats> nontext);
+  ImageMeta(int width, int height, std::vector<ComponentStats>& text, std::vector<ComponentStats>& nontext);
 };
 
 

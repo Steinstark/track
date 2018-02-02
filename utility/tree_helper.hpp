@@ -14,6 +14,6 @@ int search_tree(RTree<int, int, 2, float>& tree, cv::Rect r);
 
 int search_tree(RTree<int, int, 2, float>& tree, cv::Rect r, int& index, bool (*f)(int, void*));
 
-void remove(RTree<int, int, 2, float>& tree, cv::Rect r, int index);
+void remove_tree(RTree<int, int, 2, float>& tree, cv::Rect r, int index);
 
 #endif

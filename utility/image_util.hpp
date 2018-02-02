@@ -7,6 +7,7 @@
 void move2(cv::Mat& from, cv::Mat& to, const cv::Mat& cc, int i);
 
 double counterRotAngle(cv::Mat& img);
+double counterRotAngle(std::vector<cv::Point>& contour);
 
 void rotate(cv::Mat& src, cv::Mat& dst, double angle);
 

@@ -3,7 +3,6 @@
 #include <queue>
 
 #include "detect_table.hpp"
-#include "RTree.h"
 #include "heuristic_filter.hpp"
 #include "recursive_filter.hpp"
 #include "mla.hpp"

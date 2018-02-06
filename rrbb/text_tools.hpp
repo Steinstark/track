@@ -14,5 +14,6 @@ struct TextLine{
 };
 
 std::vector<TextLine> linesInRegion(ImageMeta& im, std::vector<ComponentStats> textData, cv::Rect region);
+std::vector<TextLine> findLines(std::vector<cv::Rect>& rects);
 
 #endif

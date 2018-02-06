@@ -18,7 +18,6 @@ add_subdirectory(rrbb)
 add_subdirectory(celldetection)
 add_subdirectory(ocr)
 add_subdirectory(trex)
-add_subdirectory(RTree)
 
 add_executable(track ${PROJECT_SOURCE_DIR}/track.cpp)
 

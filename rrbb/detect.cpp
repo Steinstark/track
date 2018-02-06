@@ -8,6 +8,7 @@
 #include "tree_helper.hpp"
 #include "rlt_detect.hpp"
 #include "clt_detect.hpp"
+#include "nrlt_detect.hpp"
 
 using namespace std;
 using namespace cv;
@@ -39,15 +40,12 @@ vector<Rect> mergeIntersecting(vector<Rect>& tables){
   return merged;
 }
 
-vector<Rect> findNRLT(ImageDataBox& data, ImageMeta& im){
-  return vector<Rect>();
-}
-
 vector<Rect> detect(Mat& text, Mat& nontext){
   ImageDataBox imd(text, nontext);
   ImageMeta im(text.cols, text.rows, imd.textData, imd.nontextData);
-  vector<Rect> tables = findRLT(imd, im);  
+  vector<Rect> rltTables = findRLT(imd, im);  
   vector<Rect> colorTables = findCLT(imd, im); //is untested. Result will not be appended even assuming it works
-  vector<Rect> nrlTables = findNRLT(imd, im);
-  return mergeIntersecting(tables);
+  vector<Rect> tables = mergeIntersecting(tables);
+  findNRLT(text, tables);
+  return tables;
 }

@@ -47,6 +47,11 @@ ImageMeta::ImageMeta(int width, int height, vector<ComponentStats>& text, vector
     insert2tree(nt_tree, nontext[i].r, i);    
 }
 
+ImageDataBox::ImageDataBox(Mat& text, Mat& nontext): text(text), nontext(nontext){
+  textData = statistics(text);
+  nontextData = statistics(nontext);
+}
+
 void find_lines(const Mat& hist, vector<Line>& text, vector<Line>& space){
   int length = max(hist.rows, hist.cols);
   int t = 0;

@@ -29,6 +29,11 @@ struct ImageMeta{
   ImageMeta(int width, int height, std::vector<ComponentStats>& text, std::vector<ComponentStats>& nontext);
 };
 
+struct ImageDataBox{
+  cv::Mat text, nontext;
+  std::vector<ComponentStats> textData, nontextData;
+  ImageDataBox(cv::Mat& text, cv::Mat& nontext);
+};
 
 ComponentStats stats2component(const cv::Mat& stats, int statsIndex, int compIndex = -1);
 std::vector<ComponentStats> statistics(cv::Mat& img);

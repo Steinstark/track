@@ -3,7 +3,7 @@
 
 #include <opencv2/opencv.hpp>
 #include <vector>
-#include "RTree.h"
+#include "tree_helper.hpp"
 
 cv::Rect stats2rect(const cv::Mat& stats, int i);
 
@@ -25,7 +25,7 @@ struct ComponentStats{
 
 struct ImageMeta{
   int width, height;
-  RTree<int, int, 2, float> t_tree, nt_tree;
+  tree::RT t_tree, nt_tree;
   ImageMeta(int width, int height, std::vector<ComponentStats>& text, std::vector<ComponentStats>& nontext);
 };
 

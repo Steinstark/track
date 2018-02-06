@@ -6,6 +6,7 @@
 
 using namespace std;
 using namespace cv;
+using namespace tree;
 
 ComponentStats::ComponentStats(Rect r, int area, int i) : r(r), area(area),  index(i){
   bb_area = r.area();

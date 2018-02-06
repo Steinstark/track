@@ -12,7 +12,6 @@
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/identity.hpp>
 #include <boost/multi_index/member.hpp>
-#include "RTree.h"
 #include "util.hpp"
 #include "tree_helper.hpp"
 #include "node.hpp"
@@ -21,9 +20,9 @@ using namespace std;
 using namespace std::placeholders;
 using namespace cv;
 using namespace boost::multi_index;
+using namespace tree;
 
 using IndexPair = pair<int, int>;
-using RT = RTree<int, int, 2, float>;
 
 struct Part{
   int maxIndex, voteCount, maxLength;
@@ -144,12 +143,12 @@ set<int> getHeaderIndex(map<int, IndexPair>& grid, vector<Rect>& bb){
 
 Cell headerCell(RT& tree, map<int, IndexPair>& grid, Rect rect, int index){
   const int inf = 1000000;
-  vector<int> overlapCol;
-  vector<int> overlapRow;
+
+
   Rect col(rect.x, -inf, rect.width, 2*inf);
   Rect row(-inf, rect.y, 2*inf, rect.height);
-  search_tree(tree, col, overlapCol);
-  search_tree(tree, row, overlapRow);
+  vector<int> overlapCol = search_tree(tree, col);
+  vector<int> overlapRow = search_tree(tree, row);
   int l = inf, t = inf, r = -inf, b = -inf;
   for (int i = 0; i < overlapCol.size(); i++){
     if (overlapCol[i] != index){

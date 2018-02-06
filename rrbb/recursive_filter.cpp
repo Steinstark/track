@@ -6,7 +6,6 @@
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/identity.hpp>
 #include <boost/multi_index/member.hpp>
-#include "RTree.h"
 #include "tree_helper.hpp"
 #include "recursive_filter.hpp"
 #include "utility.hpp"
@@ -15,8 +14,7 @@
 using namespace std;
 using namespace cv;
 using namespace boost::multi_index;
-
-using RT = RTree<int, int, 2, float>;
+using namespace tree;
 
 struct SpaceNode{
   int index, lc, rc;
@@ -174,8 +172,8 @@ SpaceNode create_space(RT& tree, const vector<Rect>& bb, int i){
   Rect r = bb[i];
   Rect leftRect(0, r.y, r.x-1, r.height);
   Rect rightRect(r.br().x+1, r.y, inf, r.height);
-  search_tree(tree, leftRect, sn.lnv);
-  search_tree(tree, rightRect, sn.rnv);
+  sn.lnv = search_tree(tree, leftRect);
+  sn.rnv = search_tree(tree, rightRect);
   int minws = inf;
   for (int j = 0; j < sn.lnv.size(); j++){
     int ind = sn.lnv[j];
@@ -225,10 +223,10 @@ bool isSuspected(NodeDB& nodes, const vector<double>& medians, const vector<doub
   auto n1 = *nodes.get<0>().begin();
   if (n1.a > k[0]*medians[0]){
     auto n2 = *nodes.get<1>().begin();      
-    if (n1.index  == n2.index && n2.w > k[1]*medians[1])
+    if (n1.w  >= n2.w && n1.w > k[1]*medians[1])
       return true;
     n2 = *nodes.get<2>().begin();
-    if (n1.index == n2.index && n2.h > k[2]*medians[2])
+    if (n1.h >= n2.h && n1.h > k[2]*medians[2])
       return true;
   }    
   return false;

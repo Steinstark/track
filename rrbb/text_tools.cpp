@@ -3,12 +3,11 @@
 #include <algorithm>
 #include <functional>
 #include "util.hpp"
-#include "RTree.h"
 #include "tree_helper.hpp"
 
 using namespace std;
 using namespace cv;
-using RT = RTree<int, int, 2, float>;
+using namespace tree;
 
 Rect TextLine::getBox(){
   if (elements.empty())
@@ -60,8 +59,7 @@ vector<TextLine> findLines(vector<Rect>& rects){
     while(true){
       Rect r = rects[cl];
       Rect possible(r.x, r.y, r.width + r.height/2, r.height);
-      vector<int> interesting;
-      search_tree(tree, possible, interesting);
+      vector<int> interesting = search_tree(tree, possible);
       set<int> overlapping = indexOnLine(r, rects, interesting);
       for (int o : overlapping){
 	line.insert(o);
@@ -83,8 +81,7 @@ vector<TextLine> findLines(vector<Rect>& rects){
 
 
 vector<TextLine> linesInRegion(ImageMeta& im, vector<ComponentStats> textData, Rect region){
-  vector<int> inside;
-  search_tree(im.t_tree, region, inside);
+  vector<int> inside = search_tree(im.t_tree, region);
   vector<Rect> rects;
   for (int i = 0; i < inside.size(); i++){
     rects.push_back(textData[inside[i]].r);

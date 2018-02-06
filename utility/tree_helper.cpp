@@ -1,40 +1,34 @@
 #include "tree_helper.hpp"
+#include <algorithm>
 
-using namespace std;
-using namespace cv;
-using RT = RTree<int, int, 2, float>;
+using namespace tree;
+using namespace tree::internal;
 
-bool callback(int id, void* arg){
-  vector<int>* v = static_cast<vector<int>*>( arg );
-  v->push_back(id);
-  return true;
+point cvp2bp(const cv::Point& p){
+  return point(p.x, p.y);
 }
 
-void insert2tree(RT& tree, const Rect& r, int i){
-  int tl[] = {r.x, r.y};
-  int br[] = {r.br().x, r.br().y};
-  tree.Insert(tl, br, i);
+box cvr2bb(const cv::Rect& r){
+  return box(cvp2bp(r.tl()), cvp2bp(r.br()));
 }
 
-int search_tree(RT& tree, Rect r, vector<int>& vec){
-  int tl[] = {r.x, r.y};
-  int br[] = {r.br().x, r.br().y};
-  return tree.Search(tl, br, callback,(static_cast<void*>(&vec)));
+value cvr2v(const cv::Rect& r, int index){
+  return value(cvr2bb(r), index);
 }
 
-int search_tree(RT& tree, Rect r){
-  vector<int> junk;
-  return search_tree(tree, r, junk);
+void tree::insert2tree(RT& tree, const cv::Rect& r, int index){
+  tree.insert(cvr2v(r, index));
 }
 
-int search_tree(RT& tree, Rect r, int& index, bool (*f)(int, void*)){
-  int tl[] = {r.x, r.y};
-  int br[] = {r.br().x, r.br().y};
-  return tree.Search(tl, br, f, (static_cast<void*>(&index)));
+std::vector<int> tree::search_tree(RT& tree, const cv::Rect& r){
+  box query_box = cvr2bb(r);
+  std::vector<int> index;
+  std::vector<value> values;
+  tree.query(boost::geometry::index::intersects(query_box), std::back_inserter(values));
+  std::transform(values.begin(), values.end(), std::back_inserter(index),[](value v){return v.second;});
+  return index;
 }
 
-void remove_tree(RT& tree, Rect r, int index){
-  int tl[] = {r.x, r.y};
-  int br[] = {r.br().x, r.br().y};
-  tree.Remove(tl, br, index);
+void tree::remove_tree(RT& tree, const cv::Rect& r, int index){
+  tree.remove(cvr2v(r, index));
 }

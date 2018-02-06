@@ -1,14 +1,13 @@
 #include <vector>
 #include <opencv2/opencv.hpp>
 #include "noise.hpp"
-#include "RTree.h"
 #include "tree_helper.hpp"
 #include "utility.hpp"
 #include "image_util.hpp"
 
 using namespace std;
 using namespace cv;
-using RT = RTree<int, int, 2, float>;
+using namespace tree;
 
 void remove_noise(Mat& text, Mat& nontext){
   Mat t_cc, t_stats, t_centroids;
@@ -28,8 +27,7 @@ void remove_noise(Mat& text, Mat& nontext){
     insert2tree(nt_tree, stats2rect(nt_stats, i), i);
   }
   for (int i = 1; i < t_labels; i++){
-    vector<int> overlap;
-    search_tree(nt_tree, stats2rect(t_stats, i), overlap);
+    vector<int> overlap = search_tree(nt_tree, stats2rect(t_stats, i));
     int t_area = t_stats.at<int>(i, CC_STAT_AREA);
     Rect tr = stats2rect(t_stats, i);
     for (int j = 0; j < overlap.size(); j++){

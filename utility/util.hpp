@@ -11,7 +11,7 @@ bool fileHasType(std::string file, std::string  extension);
 
 template<typename V, typename T>
 typename std::enable_if<std::is_arithmetic<T>::value, double>::type mean(std::vector<V>& v, std::function<T(V)> f){
-    T val = 0;
+  T val = 0;
   for (int i = 0; i < v.size(); i++){
     val += f(v[i]);
   }
@@ -26,7 +26,7 @@ typename std::enable_if<std::is_arithmetic<T>::value, double>::type variance(std
 }
 
 template <typename V, typename T>
-typename std::enable_if<std::is_arithmetic<T>::value, double>::type welford(std::vector<V> v, std::function<T(V)> f){
+typename std::enable_if<std::is_arithmetic<T>::value, double>::type welford(std::vector<V>& v, std::function<T(V)> f){
   if (v.size() < 2)
     return 0;
   double mean = 0, m2 = 0;

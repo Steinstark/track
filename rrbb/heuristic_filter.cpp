@@ -1,15 +1,13 @@
 #include "heuristic_filter.hpp"
 
 #include <vector>
-#include "RTree.h"
 #include "utility.hpp"
 #include "image_util.hpp"
 #include "tree_helper.hpp"
 
 using namespace std;
 using namespace cv;
-
-using RT = RTree<int, int, 2, float>;
+using namespace tree;
 
 void heuristic_filter(Mat& text, Mat& nontext){
   Mat cc, stats, centroids;
@@ -26,7 +24,7 @@ void heuristic_filter(Mat& text, Mat& nontext){
   for (int i = 1; i < labels; i++){
     ComponentStats cs = components[i];
     if (cs.area < 6 ||
-	search_tree(tree, cs.r) > 5 ||
+	search_tree(tree, cs.r).size() > 5 ||
 	//	(cs.hwratio < 0.06 && cs.r.width > cs.r.height) ||      
 	cs.density < 0.06){
       move2(text, nontext, cc, i);

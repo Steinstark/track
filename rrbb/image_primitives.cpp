@@ -8,6 +8,7 @@
 
 using namespace std;
 using namespace cv;
+using namespace tree;
 
 bool isHorizontalLine(ImageMeta& im, const ComponentStats& cs){
   return cs.hwratio > 0.01 &&
@@ -22,11 +23,11 @@ bool isColorBlock(ImageMeta& im, const ComponentStats& cs){
   Rect r = cs.r;
   Point tl(r.x-r.width, r.y-r.height);
   Rect vicinity(tl.x, tl.y, r.width*3, r.height*3);
-  return search_tree(im.nt_tree, vicinity) > 3 && cs.area/cs.bb_area >= 0.9;
+  return search_tree(im.nt_tree, vicinity).size() > 3 && cs.area/cs.bb_area >= 0.9;
 }
 
 bool containsManyTextElements(ImageMeta& im, const ComponentStats& cs){
-  return search_tree(im.t_tree, cs.r) >= 10;
+  return search_tree(im.t_tree, cs.r).size() >= 10;
 }
 
 
@@ -76,9 +77,9 @@ bool verticalArrangement(Mat& textTable, vector<TextLine>& lines){
   for (int i = 0; i < partitions.size(); i++){    
     double mes = mean<TextLine, double>(partitions[i], [](TextLine tl){return  tl.getSpace();});
     double met = mean<TextLine, double>(partitions[i], [](TextLine tl){return tl.getMeanLength();});
-    vector<Rect> bb(partitions[i].size());
+    vector<Rect> bb;
     for (int j = 0;j < partitions[i].size(); j++){
-      bb[i] = partitions[i][j].getBox();
+      bb.push_back(partitions[i][j].getBox());
     }
     double lv = welford<Rect, int>(bb, [](Rect r){return r.x;});
     double cv = welford<Rect, double>(bb, [](Rect r){return (r.x+r.br().x)*0.5;});
@@ -95,8 +96,7 @@ bool hasLowDensity(ComponentStats& cs){
 
 
 bool noCut(ImageMeta& im, vector<ComponentStats>& textData, Rect r){
-  vector<int> hits;
-  search_tree(im.t_tree, r, hits);
+  vector<int> hits = search_tree(im.t_tree, r);
   for (int e : hits){
     if ((r | textData[e].r).area() > r.area())
       return false;
@@ -105,5 +105,5 @@ bool noCut(ImageMeta& im, vector<ComponentStats>& textData, Rect r){
 }
 
 bool onlyText(ImageMeta& im, Rect r){
-  return search_tree(im.nt_tree, r) < 2;
+  return search_tree(im.nt_tree, r).size() < 2;
 }

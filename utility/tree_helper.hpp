@@ -1,19 +1,23 @@
 #ifndef TRACK_TREE_HELPER_HPP
 #define TRACK_TREE_HELPER_HPP
 
-#include <vector>
+#include <utility>
+#include <boost/geometry.hpp>
+#include <boost/geometry/geometries/point.hpp>
+#include <boost/geometry/geometries/box.hpp>
+#include <boost/geometry/index/rtree.hpp>
 #include <opencv2/opencv.hpp>
-#include <functional>
-#include "RTree.h"
 
-void insert2tree(RTree<int, int, 2, float>& tree, const cv::Rect& r, int i);
-
-int search_tree(RTree<int, int, 2, float>& tree, cv::Rect r, std::vector<int>& vec);
-
-int search_tree(RTree<int, int, 2, float>& tree, cv::Rect r);
-
-int search_tree(RTree<int, int, 2, float>& tree, cv::Rect r, int& index, bool (*f)(int, void*));
-
-void remove_tree(RTree<int, int, 2, float>& tree, cv::Rect r, int index);
+namespace tree{
+  namespace internal{
+    using point = boost::geometry::model::point<int, 2, boost::geometry::cs::cartesian>;
+    using box = boost::geometry::model::box<point>;
+    using value = std::pair<box, int>;
+  }
+  using RT = boost::geometry::index::rtree<internal::value, boost::geometry::index::quadratic<16> >;
+  void insert2tree(RT& tree, const cv::Rect& r, int index);
+  std::vector<int> search_tree(RT& tree, const cv::Rect& r);
+  void remove_tree(RT& tree, const cv::Rect& r, int index);
+}
 
 #endif

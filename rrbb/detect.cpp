@@ -1,7 +1,6 @@
 #include "detect.hpp"
 #include <vector>
 #include <opencv2/opencv.hpp>
-#include "RTree.h"
 #include "utility.hpp"
 #include "image_primitives.hpp"
 #include "image_util.hpp"
@@ -10,8 +9,7 @@
 
 using namespace std;
 using namespace cv;
-
-using RT = RTree<int, int, 2, float>;
+using namespace tree;
 
 ImageDataBox::ImageDataBox(Mat& text, Mat& nontext): text(text), nontext(nontext){
   textData = statistics(text);
@@ -89,9 +87,8 @@ vector<Rect> candidateCLT(ImageMeta im, vector<ComponentStats>& nonTextData)
     int index = *candidates.begin();
     Rect r = nonTextData[index].r;
     while(true){
-      vector<int> hits;
       Rect expanded = expandRect(r);
-      search_tree(tree, expanded, hits);
+      vector<int> hits = search_tree(tree, expanded);
       if (hits.empty())
 	break;
       for (int i = 0; i < hits.size(); i++){
@@ -123,6 +120,9 @@ vector<Rect> findCLT(ImageDataBox& imd, ImageMeta& im){
     double angle = counterRotAngle(hull);
     Mat skewedRegion = text(candidates[i]), correctedRegion;
     rotate(skewedRegion, correctedRegion, angle);
+    ComponentStats cs(candidates[i], 1, i);
+    if (verifyRLT(correctedRegion, im, imd.textData, cs))
+      tables.push_back(candidates[i]);
   }
   return tables;
 }
@@ -134,6 +134,7 @@ void findNRLT(Mat& text, vector<ComponentStats>& data, ImageMeta& im){
 vector<Rect> detect(Mat& text, Mat& nontext){
   ImageDataBox imd(text, nontext);
   ImageMeta im(text.cols, text.rows, imd.textData, imd.nontextData);
-  vector<Rect> tables = findRLT(imd, im);  
+  vector<Rect> tables = findRLT(imd, im);
+  vector<Rect> colorTables = findCLT(imd, im);
   return tables;
 }

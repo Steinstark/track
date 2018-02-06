@@ -11,7 +11,7 @@ find_package(PkgConfig REQUIRED)
 find_package( OpenCV REQUIRED )
 pkg_check_modules(MAGICK REQUIRED Magick++)
 
-include_directories(${PROJECT_SOURCE_DIR} "${PROJECT_SOURCE_DIR}/rrbb" "${PROJECT_SOURCE_DIR}/RTree" "${PROJECT_SOURCE_DIR}/celldetection" "${PROJECT_SOURCE_DIR}/ocr" "${PROJECT_SOURCE_DIR}/utility" "${PROJECT_SOURCE_DIR}/trex" ${MAGICK_INCLUDE_DIRS})
+include_directories(${PROJECT_SOURCE_DIR} "${PROJECT_SOURCE_DIR}/rrbb" "${PROJECT_SOURCE_DIR}/celldetection" "${PROJECT_SOURCE_DIR}/ocr" "${PROJECT_SOURCE_DIR}/utility" "${PROJECT_SOURCE_DIR}/trex" ${MAGICK_INCLUDE_DIRS})
 
 add_subdirectory(utility)
 add_subdirectory(rrbb)
@@ -24,4 +24,4 @@ add_executable(track ${PROJECT_SOURCE_DIR}/track.cpp)
 
 
 target_compile_options(track PUBLIC ${MAGICK_CFLAGS_OTHER})
-target_link_libraries(track RTree detect_table detect_cell textbox_content find_grid util image_util tree_helper leptonica tesseract ${OpenCV_LIBS} ${MAGICK_LIBRARIES})
+target_link_libraries(track detect_table detect_cell textbox_content find_grid util image_util tree_helper leptonica tesseract ${OpenCV_LIBS} ${MAGICK_LIBRARIES})

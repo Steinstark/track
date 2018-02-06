@@ -37,6 +37,7 @@ struct ImageDataBox{
 
 ComponentStats stats2component(const cv::Mat& stats, int statsIndex, int compIndex = -1);
 std::vector<ComponentStats> statistics(cv::Mat& img);
+std::vector<cv::Rect> boundingVector(cv::Mat& img);
 
 void find_lines(const cv::Mat& hist, std::vector<Line>& text, std::vector<Line>& space);
 void find_all_lines(const cv::Mat& hist, std::vector<Line>& text, std::vector<Line>& space);

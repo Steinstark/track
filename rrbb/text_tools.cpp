@@ -9,7 +9,7 @@ using namespace std;
 using namespace cv;
 using namespace tree;
 
-Rect TextLine::getBox(){
+Rect TextLine::getBox() const{
   if (elements.empty())
     return Rect();
   Rect r = elements[0];
@@ -84,7 +84,7 @@ vector<TextLine> linesInRegion(ImageMeta& im, vector<ComponentStats> textData, R
   vector<int> inside = search_tree(im.t_tree, region);
   vector<Rect> rects;
   for (int i = 0; i < inside.size(); i++){
-    rects.push_back(textData[inside[i]].r);
+    rects.push_back(textData[inside[i]].r-region.tl());
   }
   return findLines(rects);    
 }

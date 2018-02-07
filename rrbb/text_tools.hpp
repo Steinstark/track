@@ -7,7 +7,7 @@
 
 struct TextLine{
   std::vector<cv::Rect> elements;  
-  cv::Rect getBox();
+  cv::Rect getBox() const;
   double getSpace();
   double getMeanLength();
   TextLine(){};

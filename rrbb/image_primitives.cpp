@@ -57,13 +57,35 @@ vector<vector<TextLine> > partitionBlocks(vector<TextLine>& tls, vector<Line>& s
   vector<vector<TextLine> > partitions(space.size()+1, vector<TextLine>());
   for (int i = 0; i < tls.size(); i++){
     Rect r = tls[i].getBox();
-    auto it = table.upper_bound(r.x);
+    auto it = table.upper_bound(r.x-1);
     if (it != table.end()){
       partitions[it->second].push_back(tls[i]);
     }else
       cout << "Left index is larger than " << inf << endl;
   }
   return partitions;
+}
+
+vector<Rect> verticalMerge(vector<TextLine>& lines){
+  vector<Rect> boxes;
+  if (lines.empty())
+    return boxes;
+  for (int i = 0; i < lines.size(); i++){
+    boxes.push_back(lines[i].getBox());
+  }
+  sort(boxes.begin(), boxes.end(), [](const Rect& a, const Rect& b){return a.y < b.y;});
+  vector<Rect> merged;
+  Rect current = boxes[0];  
+  for (int i = 1; i < boxes.size(); i++){
+    if (current.y <= boxes[i].y && current.br().y >= boxes[i].y){
+      current |= boxes[i];
+    }else{
+      merged.push_back(current);
+      current = boxes[i];
+    }
+  }
+  merged.push_back(current);
+  return merged;
 }
 
 
@@ -74,17 +96,14 @@ bool verticalArrangement(Mat& textTable, vector<TextLine>& lines){
   find_lines(hist, text, space);
   vector<vector<TextLine> > partitions = partitionBlocks(lines, space);
   double ms = mean<Line, int>(space, [](Line l){return l.length();});
-  for (int i = 0; i < partitions.size(); i++){    
+  for (int i = 0; i < partitions.size(); i++){
+    vector<Rect> merged = verticalMerge(partitions[i]);
     double mes = mean<TextLine, double>(partitions[i], [](TextLine tl){return  tl.getSpace();});
-    double met = mean<TextLine, double>(partitions[i], [](TextLine tl){return tl.getMeanLength();});
-    vector<Rect> bb;
-    for (int j = 0;j < partitions[i].size(); j++){
-      bb.push_back(partitions[i][j].getBox());
-    }
-    double lv = welford<Rect, int>(bb, [](Rect r){return r.x;});
-    double cv = welford<Rect, double>(bb, [](Rect r){return (r.x+r.br().x)*0.5;});
-    double rv = welford<Rect, int>(bb, [](Rect r){return r.br().x;});
-    if (lv >= met && cv >= met && rv >= met && ms <= mes)
+    double met = mean<Rect, int>(merged, [](const Rect& r){return r.width;});
+    double lv = welford<Rect, int>(merged, [](Rect r){return r.x;});
+    double cv = welford<Rect, double>(merged, [](Rect r){return (r.x+r.br().x)*0.5;});
+    double rv = welford<Rect, int>(merged, [](Rect r){return r.br().x;});
+    if (lv >= met || cv >= met || rv >= met || ms <= mes)
       return false;    
   }
   return true;

@@ -43,9 +43,10 @@ vector<Rect> mergeIntersecting(vector<Rect>& tables){
 vector<Rect> detect(Mat& text, Mat& nontext){
   ImageDataBox imd(text, nontext);
   ImageMeta im(text.cols, text.rows, imd.textData, imd.nontextData);
-  vector<Rect> rltTables = findRLT(imd, im);  
-  vector<Rect> colorTables = findCLT(imd, im); //is untested. Result will not be appended even assuming it works
-  vector<Rect> tables = mergeIntersecting(tables);
-  findNRLT(text, tables);
-  return tables;
+  vector<Rect> rlTables = findRLT(imd, im);  
+  //vector<Rect> colorTables = findCLT(imd, im); //is untested. Result will not be appended even assuming it works
+  //vector<Rect> nrlTables = findNRLT(text, rlTables); //currently only serve to degrade performance
+  //rlTables.insert(rlTables.end(), nrlTables.begin(), nrlTables.end());
+  vector<Rect> merged = mergeIntersecting(rlTables);
+  return merged;
 }

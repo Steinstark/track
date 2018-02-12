@@ -1,7 +1,10 @@
 #include <algorithm>
-#include <opencv2/opencv.hpp>
+#include <functional>
 #include <iostream>
 #include <iterator>
+#include <list>
+#include <utility>
+#include <opencv2/opencv.hpp>
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/identity.hpp>
@@ -16,32 +19,12 @@ using namespace cv;
 using namespace boost::multi_index;
 using namespace tree;
 
-struct SpaceNode{
-  int index, lc, rc;
-  vector<int> lnv,rnv;  
-  size_t left_num(){
-    return lnv.size();
-  }
-  size_t right_num(){
-    return rnv.size();
-  }
-  SpaceNode(){
-    index = 0;
-    lc = 0;
-    rc = 0;
-  }
-};
+using IntPair = pair<int, int>;
 
 struct AreaNode{
   int a, w, h, index;
-  AreaNode(int a, int w, int h, int index): a(a), w(w), h(h), index(index){}
-  int operator[](size_t id){
-    if (id == 0) return a;
-    if (id == 1) return w;
-    if (id == 2) return h;
-    if (id == 3) return index;
-    return -1;
-  }
+  Rect r;
+  AreaNode(int a, int w, int h, int index, Rect r): a(a), w(w), h(h), index(index), r(r){}
 };
 
 using NodeDB = multi_index_container<
@@ -50,9 +33,7 @@ using NodeDB = multi_index_container<
     ordered_non_unique<member<AreaNode, int, &AreaNode::a>, greater<int> >,
     ordered_non_unique<member<AreaNode, int, &AreaNode::w>, greater<int> >,
     ordered_non_unique<member<AreaNode, int, &AreaNode::h>, greater<int> >,
-    ordered_unique<member<AreaNode, int, &AreaNode::index> >,
-    ordered_non_unique<member<AreaNode, int, &AreaNode::w>, less<int> >,
-    ordered_non_unique<member<AreaNode, int, &AreaNode::h>, less<int> >
+    ordered_unique<member<AreaNode, int, &AreaNode::index> >
     >
   >;
 
@@ -64,41 +45,8 @@ vector<double> k_calc(const vector<double>& means, const vector<double>& medians
   return k;
 }
 
-int getMax(const vector<int>&v){
-  int maxv = -1;
-  for (int i = 0; i < v.size(); i++){
-    if (v[i] > maxv)
-      maxv = v[i];
-  }
-  return maxv;
-}
-
-vector<int> getSpace(const vector<SpaceNode>& space){
-  vector<int> v(space.size());
-  for (int i  = 0; i < space.size(); i++){
-    v.push_back(space[i].rc);
-  }
-  return v;
-}
-
-vector<int> getRightCount(const vector<SpaceNode>& space){
-  vector<int> v(space.size());
-  for (int i = 0; i  < space.size(); i++){
-    v.push_back(space[i].rnv.size());
-  }
-  return v;
-}
-
-vector<int> getLeftCount(const vector<SpaceNode>& space){
-  vector<int> v(space.size());
-  for (int i = 0; i  < space.size(); i++){
-    v.push_back(space[i].lnv.size());
-  }
-  return v;
-}
-
 //TODO
-//implement median for a NodeDB
+//Technically not median for even length, but doesnt really matter
 vector<double> getMedians(NodeDB& nodes){
   vector<double> median(3,0);
   auto& av = nodes.get<0>();
@@ -106,7 +54,6 @@ vector<double> getMedians(NodeDB& nodes){
   auto& hv = nodes.get<2>();
   size_t n = nodes.size();
   int a = n/2;
-  int b = !(n % 2);  
   auto ita = av.begin();
   auto itw = wv.begin();
   auto ith = hv.begin();
@@ -116,17 +63,6 @@ vector<double> getMedians(NodeDB& nodes){
   median[0] += ita->a;
   median[1] += itw->w;
   median[2] += ith->h;
-  if (b){
-    advance(ita, b);
-    advance(itw, b);
-    advance(ith, b);
-  }
-  median[0] += ita->a;
-  median[1] += itw->w;  
-  median[2] += ith->h;   
-  for (int i = 0; i < 3; i++){
-    median[i] = median[i]/2;
-  }
   return median;
 }
 
@@ -142,157 +78,104 @@ vector<double> getMeans(NodeDB& nodes){
     mean[2] += it->h;
   }
   for (int i = 0; i < 3; i++){
-    mean[i] = mean[i]/nodes.size();
+    mean[i] /= nodes.size();
   }
   return mean;
 }
 
-double getMean(vector<int>& v){
-  double mean = 0;
-  for (int i = 0; i < v.size(); i++){
-    mean += v[i];
+struct DataBox{
+  vector<double> means, medians, k;
+  DataBox(NodeDB nodes): means(getMeans(nodes)), medians(getMedians(nodes)){
+    k = k_calc(means, medians);
   }
-  return mean/v.size();
+};
+
+//
+bool classify(int minSpace, int medws, int meanws){
+  return minSpace > max(medws, meanws) &&  minSpace > 2*meanws;
 }
 
-double getMedian(vector<int> v){
-  int n = v.size();
-  if (n % 2){
-    return v[n/2];
-  }
-  return (v[n/2] + v[n/2-1])/2;
-}
-
-//IMPROVEMENT
-//nonlinear search for closest neighbour
-SpaceNode create_space(RT& tree, const vector<Rect>& bb, int i){
+vector<int> distances(RT& tree, Rect& r){
   int inf = 1000000;
-  SpaceNode sn;
-  sn.index = i;
-  Rect r = bb[i];
-  Rect leftRect(0, r.y, r.x-1, r.height);
-  Rect rightRect(r.br().x+1, r.y, inf, r.height);
-  sn.lnv = search_tree(tree, leftRect);
-  sn.rnv = search_tree(tree, rightRect);
-  int minws = inf;
-  for (int j = 0; j < sn.lnv.size(); j++){
-    int ind = sn.lnv[j];
-    int val = r.x-bb[ind].br().x;
-    if (val > 0 && val < minws)
-      minws = val;
-  }
-  sn.lc = minws;
-  minws = inf;
-  for (int j = 0; j < sn.rnv.size(); j++){
-    int ind = sn.rnv[j];
-    int val = bb[ind].x-r.br().x;
-    if (val > 0 && val < minws)
-      minws = val;
-  }
-  sn.rc = minws;
-  return sn;
+  vector<Rect> left = closestBox(tree, r.tl(), Rect(0,r.y, r.x, r.width));
+  vector<Rect> right = closestBox(tree, r.br(), Rect(r.br().x, r.y, inf, r.width));
+  vector<int> dist;
+  if (left.size())
+    dist.push_back(r.x - left[0].br().x);
+  if (right.size())
+    dist.push_back(right[0].x - r.br().x);
+  return dist;
 }
 
-//TODO
-//Median and mean isn't updated properly
-vector<int> classify_elements(RT& tree, const vector<int>& se, const vector<Rect>& bb){
-  vector<SpaceNode> space;
-  for (int i = 0; i < bb.size(); i++){
-    SpaceNode sn = create_space(tree, bb, i);
-    space.push_back(sn);
+void classifyAll(NodeDB& nodes, list<int>& suspects){
+  RT tree;
+  for (auto it = nodes.begin(); it != nodes.end(); it++){
+    insert2tree(tree, it->r, it->index);
   }
-  vector<int> ws = getSpace(space);
-  vector<int> nlnv = getLeftCount(space);
-  vector<int> nrnv = getRightCount(space);
-  double median = getMedian(ws);
-  double mean = getMean(ws);
-  vector<int> v;
-  for (int i = 0; i < se.size(); i++){
-    if (min(space[i].lc, space[i].rc) > max(median, mean) &&
-	(max(space[i].lc, space[i].rc) == getMax(ws) ||
-	 min(space[i].lc, space[i].rc) > 2*mean))
-      v.push_back(se[i]);
-    else if ((space[i].lnv.size() == getMax(nlnv) && space[i].lnv.size() > 2) ||
-	     space[i].rnv.size() == getMax(nrnv) && space[i].rnv.size() > 2)
-      v.push_back(se[i]);    
+  vector<int> minSpaces;
+  minSpaces.reserve(nodes.size());
+  for (auto it = nodes.begin(); it != nodes.end(); it++){
+    
   }
-  return v;
-}
-
-bool isSuspected(NodeDB& nodes, const vector<double>& medians, const vector<double>& k){
-  auto n1 = *nodes.get<0>().begin();
-  if (n1.a > k[0]*medians[0]){
-    auto n2 = *nodes.get<1>().begin();      
-    if (n1.w  >= n2.w && n1.w > k[1]*medians[1])
-      return true;
-    n2 = *nodes.get<2>().begin();
-    if (n1.h >= n2.h && n1.h > k[2]*medians[2])
-      return true;
-  }    
-  return false;
-}
-
-vector<int> suspected_elements(NodeDB& nodes){
-  vector<int> v;
-  while (nodes.size()){
-    vector<double> medians = getMedians(nodes);
-    vector<double> means = getMeans(nodes);
-    vector<double> k = k_calc(means, medians);
-    bool suspect = isSuspected(nodes, medians, k);
-    if (!suspect)
-      break;
-    auto& p = nodes.get<0>();
-    v.push_back(p.begin()->index);
-    p.erase(p.begin());
-  }
-  return v;
-}
-
-vector<int> minimum_median_filter(NodeDB& nodes){
-  vector<int> v;
-  auto& ws = nodes.get<4>();
-  auto& hs = nodes.get<5>();
-  auto w = ws.begin();
-  auto h = hs.begin();
-  while (nodes.size()){
-    vector<double> medians = getMedians(nodes);
-    vector<double> means = getMeans(nodes);
-    vector<double> k = k_calc(means, medians);
-    auto w = ws.begin();
-    auto h = hs.begin();
-    if (w->w < medians[1]/k[1]){
-      v.push_back(w->index);
-      ws.erase(w);   
-    }else if (h->h < medians[2]/k[2]){
-      v.push_back(h->index);
-      hs.erase(h);
+  for (auto it = suspects.begin(); it != suspects.end(); it++){
+    if (classify(0,0,0)){
+      it = suspects.erase(it);
     }
-    else
-      break;
   }
-  return v;
+}
+
+bool median_filter(const AreaNode& r, const AreaNode& extreme, function<bool(int, int)> f){
+  return r.a == extreme.a && f(r.a, 0) && ((r.w == extreme.w && f(r.w, 1)) || (r.h == extreme.h && f(r.h, 2)));
+}
+
+void maximum_median_filter(NodeDB& nodes, DataBox& box, list<int>& suspects){  
+  auto& as = nodes.get<0>();
+  auto& ws = nodes.get<1>();
+  auto& hs = nodes.get<2>();  
+  while (nodes.size()){
+    auto ai = as.begin();
+    AreaNode extreme(ai->a, ws.begin()->w, hs.begin()->h, 0, Rect());
+    if (!median_filter(*ai, extreme, [&box](int l, int i){return l > box.medians[i]*box.k[i];})){
+      break;
+    }
+    suspects.push_back(ai->index);
+    as.erase(ai);
+  }
+}
+
+void minimum_median_filter(NodeDB& nodes, DataBox& box, list<int>& suspects){
+  auto& as = nodes.get<0>();
+  auto& ws = nodes.get<1>();
+  auto& hs = nodes.get<2>();  
+  while (nodes.size()){
+    auto ai = as.rbegin();
+    AreaNode extreme(ai->a, ws.rbegin()->w, hs.rbegin()->h, 0, Rect());
+    if (!median_filter(*ai, extreme, [&box](int l, int i){return l < box.medians[i]/box.k[i];})){
+      break;
+    }
+    suspects.push_back(ai->index);
+    as.erase(ai.base());
+  }
+}
+
+list<int> nontextElements(NodeDB& nodes){
+  DataBox box(nodes);
+  list<int> suspects;
+  NodeDB local = nodes;
+  minimum_median_filter(local, box, suspects);
+  maximum_median_filter(local, box, suspects);
+  classifyAll(nodes, suspects);
+  return suspects;
 }
 
 bool recursive_filter(Mat& text, Mat& nontext){
-  Mat cc, stats, centroids;
-  int labels = connectedComponentsWithStats(text, cc, stats, centroids, 8, CV_32S);
   RT tree;
-  vector<Rect> bb(labels);
   NodeDB nodes;
-  for (int i = 1; i < labels; i++){
-    ComponentStats cs = stats2component(stats, i);
-    bb[i] = cs.r;
-    nodes.insert({cs.area, bb[i].width, bb[i].height, i});
-    insert2tree(tree, bb[i], i);
+  Mat cc;
+  vector<ComponentStats> stats = statistics(text);
+  list<int> toRemove = nontextElements(nodes);
+  for (int e : toRemove){
+    move2(text, nontext, cc, e);
   }
-  vector<int> se = suspected_elements(nodes);
-  vector<int> ce = classify_elements(tree, se, bb);
-  vector<int> me = minimum_median_filter(nodes);
-  vector<int> v;
-  v.insert(v.end(), ce.begin(), ce.end());
-  v.insert(v.end(), me.begin(), me.end());
-  for (int i = 0; i < v.size(); i++){
-    move2(text, nontext, cc, v[i]);
-  }
-  return v.size() > 0 && v.size() != labels-1;
+  return toRemove.size() > 0 && toRemove.size() != stats.size();
 }

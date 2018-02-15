@@ -1,5 +1,5 @@
 #include <algorithm>
-#include <queue>
+#include <list>
 #include <utility>
 #include "homogenous_regions.hpp"
 #include "image_util.hpp"
@@ -65,44 +65,45 @@ int split(Mat& hist){
   return 0;
 }
 
-queue<IntPair> splitRegion(Mat& hist){
-  queue<IntPair> qin, qout;
-  qin.push(IntPair(0, hist.rows));  
+list<IntPair> splitRegion(Mat& hist){
+  list<IntPair> qin, qout;
+  qin.push_back(IntPair(0, hist.rows));  
   while (qin.size()){
     IntPair p = qin.front();    
-    qin.pop();
+    qin.pop_front();
     Rect r = pos2rect(0, p.first, 1, p.second);
     Mat localHist = hist(r);
     int pos = split(localHist);
     if (similarity(localHist) <= 1.2 || !pos)
-      qout.push(p);
+      qout.push_back(p);
     else{
       pos += p.first;
-      qin.push(IntPair(p.first, pos));
-      qin.push(IntPair(pos, p.second));
+      qin.push_back(IntPair(p.first, pos));
+      qin.push_back(IntPair(pos, p.second));
     }
   }
   return qout;
 }
 
-vector<Rect> homogenous_regions(const Mat& img){
+list<Rect> homogenous_regions(const Mat& img){
   Mat histRow;
   reduce(img, histRow, 1, CV_REDUCE_SUM, CV_64F);
-  vector<Rect> regions;
-  queue<IntPair> q1 = splitRegion(histRow);  
-  while (q1.size()){
-    IntPair p1 = q1.front();
-    q1.pop();
-    Mat histCol;
-    Rect reg = pos2rect(0, p1.first, img.cols, p1.second);
-    reduce(img(reg), histCol, 0, CV_REDUCE_SUM, CV_64F);
-    transpose(histCol, histCol);
-    queue<IntPair> q2 = splitRegion(histCol);
-    while (q2.size()){
-      IntPair p2 = q2.front();
-      q2.pop();
-      regions.push_back(pos2rect(p2.first, p1.first, p2.second, p1.second));
+  list<IntPair> rows = splitRegion(histRow);
+  Mat histCol;
+  reduce(img, histCol, 0, CV_REDUCE_SUM, CV_64F);
+  transpose(histCol, histCol);
+  list<IntPair> cols = splitRegion(histCol);
+  list<Rect> regions;
+  for (IntPair row : rows){
+    for (IntPair col : cols){
+      regions.push_back(pos2rect(col.first, row.first, col.second, row.second));
     }
   }
+  
+  Mat mask(img.size(), CV_8UC1, Scalar(0));
+  for (Rect& region : regions){
+    rectangle(mask, region, Scalar(255));
+  }
+  Mat overlay = img+mask;
   return regions;
 }

@@ -1,4 +1,5 @@
 #include "detect.hpp"
+#include <list>
 #include <vector>
 #include <opencv2/opencv.hpp>
 #include "utility.hpp"
@@ -14,39 +15,36 @@ using namespace std;
 using namespace cv;
 using namespace tree;
 
-vector<Rect> mergeIntersecting(vector<Rect>& tables){
-  set<int> toVisit;
-  vector<Rect> merged;
-  RT tree;
-  for (int i = 0; i < tables.size(); i++){
-    toVisit.insert(i);
-    insert2tree(tree, tables[i], i);
+list<Rect> mergeIntersecting(list<Rect>& tables){
+  list<Rect> merged;
+  RTBox tree;
+  for (Rect& table : tables){
+    insert2tree(tree, table);
   }
-  while (toVisit.size()){
-     int index = *toVisit.begin();
-     Rect r = tables[index];
-     while (true){
-       vector<int> hits = search_tree(tree, r);
-       if (hits.empty())
-	 break;
-       for (int i = 0; i < hits.size(); i++){
-	 r |= tables[hits[i]];
-	 toVisit.erase(hits[i]);
-	 remove_tree(tree, tables[hits[i]], hits[i]);
-       }
-     }     
-     merged.push_back(r);
+  while (tree.size()){
+    auto it = tree_begin(tree);
+    Rect r = bb2cvr(*it);
+    while (true){
+      list<Rect> intersects = search_tree(tree, r);
+      if (intersects.empty())
+	break;
+      for (Rect& intersect: intersects){
+	r |= intersect;
+	remove_tree(tree, intersect);
+      }
+    }
+    merged.push_back(r);
   }
   return merged;
 }
 
-vector<Rect> detect(Mat& text, Mat& nontext){
+list<Rect> detect(Mat& text, Mat& nontext){
   ImageDataBox imd(text, nontext);
   ImageMeta im(text.cols, text.rows, imd.textData, imd.nontextData);
-  vector<Rect> rlTables = findRLT(imd, im);  
+  list<Rect> rlTables = findRLT(imd, im);  
   //vector<Rect> colorTables = findCLT(imd, im); //is untested. Result will not be appended even assuming it works
-  //vector<Rect> nrlTables = findNRLT(text, rlTables); //currently only serve to degrade performance
+  //  vector<Rect> nrlTables = findNRLT(text, rlTables); //currently only serve to degrade performance
   //rlTables.insert(rlTables.end(), nrlTables.begin(), nrlTables.end());
-  vector<Rect> merged = mergeIntersecting(rlTables);
+  list<Rect> merged = mergeIntersecting(rlTables);
   return merged;
 }

@@ -1,4 +1,5 @@
 #include <string>
+#include <list>
 #include <opencv2/opencv.hpp>
 #include <iostream>
 
@@ -41,7 +42,7 @@ int main(int argc, char** argv){
   if (!gray.data)
     cerr << "Problem loading image. " << endl;
   Mat bw = gray2binary(gray);
-  vector<Rect> tables = detect_tables(bw);
+  list<Rect> tables = detect_tables(bw);
   for (Rect& table : tables){
     vector<Rect> cells = detect_cells(bw, table);
     auto grid =  find_grid(cells);

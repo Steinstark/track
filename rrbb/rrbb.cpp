@@ -1,4 +1,4 @@
-#include <vector>
+#include <list>
 #include <algorithm>
 #include <queue>
 
@@ -14,11 +14,11 @@
 using namespace std;
 using namespace cv;
 
-vector<Rect> detect_tables(Mat& text){
+list<Rect> detect_tables(Mat& text){
   Mat nontext(text.size(), CV_8UC1, Scalar(0));
   heuristic_filter(text, nontext);
-  //multi_level_analysis(text, nontext);
-  //multi_level_classification(text, nontext);
+  multi_level_analysis(text, nontext);
+  multi_level_classification(text, nontext);
   remove_noise(text, nontext);  
   return detect(text, nontext);
 }

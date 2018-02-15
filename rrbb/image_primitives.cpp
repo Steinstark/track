@@ -11,7 +11,7 @@ using namespace cv;
 using namespace tree;
 
 bool isHorizontalLine(ImageMeta& im, const ComponentStats& cs){
-  return cs.hwratio > 0.01 &&
+  return cs.hwratio > 0.05 &&
     cs.r.width > im.width/8;    
 }
 

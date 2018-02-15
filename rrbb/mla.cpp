@@ -1,7 +1,7 @@
-#include <vector>
-#include <opencv2/opencv.hpp>
-
 #include "mla.hpp"
+
+#include <list>
+#include <opencv2/opencv.hpp>
 #include "homogenous_regions.hpp"
 #include "recursive_filter.hpp"
 #include "utility.hpp"
@@ -15,10 +15,10 @@ void multi_level_analysis(Mat& text, Mat& ntext){
   while (!q.empty()){
     Rect r = q.front();
     q.pop();
-    Mat region = text(r);
-    vector<Rect> homboxes = homogenous_regions(region);
-    for (int i = 0; i < homboxes.size(); i++){
-      Rect lr = homboxes[i]+r.tl();
+    Mat imageRegion = text(r);
+    list<Rect> regions = homogenous_regions(imageRegion);
+    for (Rect region : regions){
+      Rect lr = region+r.tl();
       Mat ltext = text(lr), lntext = ntext(lr);
       if (recursive_filter(ltext, lntext))
 	q.push(lr);

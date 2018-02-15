@@ -1,4 +1,5 @@
 #include <vector>
+#include <list>
 #include <algorithm>
 #include <opencv2/opencv.hpp>
 #include "homogenous_regions.hpp"
@@ -14,17 +15,23 @@ using namespace cv;
 using namespace tree;
 
 vector<Rect> findKernels(Mat& localText, RT& tree, vector<TextLine>& tls){
-  vector<Rect> regions = homogenous_regions(localText);
+  list<Rect> regions = homogenous_regions(localText);
+  
+  Mat mask(localText.size(), CV_8UC1, Scalar(0));
+  for (Rect& r : regions){
+    rectangle(mask, r, Scalar(255));
+  }
+  Mat overlay = mask + localText;
   vector<Rect> kernels;
-  for (int i = 0; i < regions.size(); i++){
-    vector<int> hits = search_tree(tree, regions[i]);
+  for (Rect region : regions){
+    vector<int> hits = search_tree(tree, region);
     vector<TextLine> localLines;
     for (int i = 0; i < hits.size(); i++){
       localLines.push_back(tls[hits[i]]);
     }
-    Mat localMat = localText(regions[i]);
+    Mat localMat = localText(region);
     if (hits.size() > 1 && verticalArrangement(localMat, localLines)){
-      kernels.push_back(regions[i]);
+      kernels.push_back(region);
     }
   }
   return kernels;
@@ -91,6 +98,5 @@ vector<Rect> findNRLT(Mat& text, vector<Rect> tables){
     if (verticalArrangement(region, ltl))
       nrlTables.push_back(r);
   }
-  //need to verify by vertial arrangement
   return nrlTables;
 }

@@ -70,14 +70,14 @@ void find_lines(const Mat& hist, vector<Line>& text, vector<Line>& space){
       t = i;
     }
     else if (hist.at<double>(i-1) && !hist.at<double>(i)){
-      text.push_back(Line(t,i-1));
+      text.push_back(Line(t,i));
       t = -1;
     }
   }
   if (t != -1)
-    text.push_back(Line(t,length-1));
+    text.push_back(Line(t,length));
   for (int i = 1; i < text.size(); i++){
-    space.push_back(Line(text[i-1].r+1, text[i].l-1));
+    space.push_back(Line(text[i-1].r, text[i].l));
   }
 }
 

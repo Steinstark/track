@@ -14,24 +14,27 @@ using namespace std;
 using namespace cv;
 using namespace tree;
 
-vector<Rect> findKernels(Mat& localText, RT& tree, vector<TextLine>& tls){
-  list<Rect> regions = homogenous_regions(localText);
+list<Rect> findKernels(Mat& localText, RT& tree, vector<TextLine>& tls){
+  list<Rect> regions = homogenous_recursive(localText);
   
   Mat mask(localText.size(), CV_8UC1, Scalar(0));
   for (Rect& r : regions){
     rectangle(mask, r, Scalar(255));
   }
   Mat overlay = mask + localText;
-  vector<Rect> kernels;
+  list<Rect> kernels;
   for (Rect region : regions){
     vector<int> hits = search_tree(tree, region);
     vector<TextLine> localLines;
+    Rect kernel;
     for (int i = 0; i < hits.size(); i++){
       localLines.push_back(tls[hits[i]]);
+      kernel |= tls[hits[i]].getBox();
     }
-    Mat localMat = localText(region);
+    Mat localMat = localText(kernel);
     if (hits.size() > 1 && verticalArrangement(localMat, localLines)){
-      kernels.push_back(region);
+      
+      kernels.push_back(kernel);
     }
   }
   return kernels;
@@ -42,16 +45,17 @@ bool criteria9(int nhtl, int nvtl, int wc, int w){
     (nhtl >= 1 && nvtl <= 2 && abs(wc-w) <= 0.05*w);
 }
 
+
+
 Rect process(vector<int> index, vector<Rect> bb, Rect kernel){
   int nhtl = 0, nvtl = 0;
   Rect last = kernel;
-  for (int i = 0; i < index.size(); i++){
-    Rect& r = bb[index[i]];
-    if (r.height > r.width) nhtl++;
+  for (Rect& r : bb){
+    if (max(r.y, last.y) - min(r.br().y, last.br().y) < 0) nhtl++;
     else nvtl++;
     if (!criteria9(nhtl, nvtl, r.width, kernel.width))
       break;
-    last = bb[index[i]];
+    last = r;
   }
   return last;
 }
@@ -69,10 +73,10 @@ Rect expandKernel(Rect& kernel, RT& tree, vector<Rect>& tbl){
   return a|b;  
 }
 
-vector<Rect> findNRLT(Mat& text, vector<Rect> tables){
+list<Rect> findNRLT(Mat& text, list<Rect> tables){
   Mat localText = text.clone();
-  for (int i = 0; i < tables.size(); i++){
-    Mat roi = localText(tables[i]);
+  for (Rect& table : tables){
+    Mat roi = localText(table);
     roi.setTo(0);
   }
   vector<Rect> bb = boundingVector(localText);  
@@ -85,18 +89,21 @@ vector<Rect> findNRLT(Mat& text, vector<Rect> tables){
     tbl.push_back(r);
     rectangle(localText, r, Scalar(255), CV_FILLED);
   }  
-  vector<Rect> kernels = findKernels(localText, tree, tls);
-  vector<Rect> nrlTables;
-  for (int i = 0; i < kernels.size(); i++){
-    Rect r = expandKernel(kernels[i], tree, tbl);
-    Mat region = localText(r);
-    vector<int> inside = search_tree(tree, r);
+  list<Rect> kernels = findKernels(text, tree, tls);
+  list<Rect> nrlTables;
+  for (Rect& kernel : kernels){
+
+    Mat debugKernel = text(kernel);
+    
+    Rect expanded = expandKernel(kernel, tree, tbl);
+    Mat region = localText(expanded);
+    vector<int> inside = search_tree(tree, expanded);
     vector<TextLine> ltl;
     for (int v : inside){
       ltl.push_back(tls[v]);
     }
     if (verticalArrangement(region, ltl))
-      nrlTables.push_back(r);
+      nrlTables.push_back(expanded);
   }
   return nrlTables;
 }

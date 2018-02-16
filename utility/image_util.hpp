@@ -20,6 +20,4 @@ cv::Rect pos2rect(int l, int t, int r, int b);
 int pix2a4dpi(int xPixels, int yPixels);
 
 cv::Mat gray2binary(const cv::Mat& gray);
-
-void displayHist(std::string str, const cv::Mat& img);
 #endif

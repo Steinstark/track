@@ -1,6 +1,7 @@
 #include "rlt_detect.hpp"
 #include <list>
 #include <vector>
+#include <functional>
 #include <opencv2/opencv.hpp>
 #include "utility.hpp"
 #include "image_primitives.hpp"
@@ -12,38 +13,17 @@ using namespace std;
 using namespace cv;
 using namespace tree;
 
-bool verifyRLT(Mat& region,
-	       ImageMeta& im,
-	       vector<ComponentStats>& textData,
-	       ComponentStats& cs)
-{
-  if (hasLowDensity(cs) &&
-      regionIsRectangle(cs) &&
-      manySmallRect(region, cs) &&
-      noCut(im, textData, cs.r)){
-    vector<TextLine> tls = linesInRegion(im, textData, cs.r);
-    Mat tableCopy = region.clone();
-    for (int i = 0; i < tls.size(); i++){
-      rectangle(tableCopy, tls[i].getBox(), Scalar(255), CV_FILLED);
-    }
-    return verticalArrangement(tableCopy, tls);  
-  }
-  return false;
-}
-
 bool candidateRLT(ImageMeta& im, ComponentStats& cs){
   return
-    containsManyTextElements(im, cs) &&
-    (isHorizontalLine(im, cs) ||
-     regionIsRectangle(cs) ||
-     isColorBlock(im, cs));
+    containsManyElements(im.t_tree, cs) &&
+    (isHorizontalLine(cs) ||
+     regionIsRectangle(cs));
 }
 
-list<Rect> findRLT(ImageDataBox& imd, ImageMeta& im)
+list<Rect> findRLT(ImageDataBox& imd, ImageMeta& im, function<bool(Mat&, ComponentStats&)> f)
 {
   list<ComponentStats> candidates;
   vector<ComponentStats>& nontextData = imd.nontextData;
-  vector<ComponentStats>& textData = imd.textData;
   Mat& text = imd.text;
   for (ComponentStats& cs: nontextData){
     if (candidateRLT(im, cs)){
@@ -55,7 +35,7 @@ list<Rect> findRLT(ImageDataBox& imd, ImageMeta& im)
     Mat skewedRegion = text(it->r), correctedRegion;
     double angle = counterRotAngle(skewedRegion);
     rotate(skewedRegion, correctedRegion, angle);
-    if (verifyRLT(correctedRegion, im, textData, *it)){
+    if (verifyReg(correctedRegion)){
       verified.push_back(it->r);
     }
   }

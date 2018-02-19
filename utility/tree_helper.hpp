@@ -22,6 +22,7 @@ namespace tree{
   void insert2tree(RT& tree, const cv::Rect& r, int index);
   void insert2tree(RTBox& tree, const cv::Rect& r);
   std::vector<cv::Rect> closestBox(RT& tree, const cv::Point cvp, const cv::Rect& r);
+  bool cut_tree(RT& tree, const cv::Rect& r);
   std::vector<int> search_tree(RT& tree, const cv::Rect& r);
   std::list<cv::Rect> search_tree(RTBox& tree, const cv::Rect& r);
   void remove_tree(RT& tree, const cv::Rect& r, int index);

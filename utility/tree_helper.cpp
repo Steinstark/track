@@ -34,6 +34,13 @@ void tree::insert2tree(RTBox& tree, const cv::Rect& r){
   tree.insert(cvr2bb(r));
 }
 
+bool tree::cut_tree(RT& tree, const cv::Rect& r){
+  box b = cvr2bb(r);
+  std::list<value> boxes;
+  tree.query(bgi::intersects(b) &&!bgi::covered_by(b), std::back_inserter(boxes));
+  return boxes.empty();
+}
+
 std::vector<cv::Rect> tree::closestBox(RT& tree, const cv::Point cvp, const cv::Rect& r){
   point p = cvp2bp(cvp);
   box b = cvr2bb(r);

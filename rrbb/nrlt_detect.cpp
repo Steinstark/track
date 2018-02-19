@@ -1,6 +1,7 @@
 #include <vector>
 #include <list>
 #include <algorithm>
+#include <functional>
 #include <opencv2/opencv.hpp>
 #include "homogenous_regions.hpp"
 #include "utility.hpp"
@@ -73,7 +74,7 @@ Rect expandKernel(Rect& kernel, RT& tree, vector<Rect>& tbl){
   return a|b;  
 }
 
-list<Rect> findNRLT(Mat& text, list<Rect> tables){
+list<Rect> findNRLT(Mat& text, list<Rect> tables, function<bool(Mat&, ComponentStats&)> f){
   Mat localText = text.clone();
   for (Rect& table : tables){
     Mat roi = localText(table);
@@ -91,19 +92,13 @@ list<Rect> findNRLT(Mat& text, list<Rect> tables){
   }  
   list<Rect> kernels = findKernels(text, tree, tls);
   list<Rect> nrlTables;
-  for (Rect& kernel : kernels){
-
-    Mat debugKernel = text(kernel);
-    
+  for (Rect& kernel : kernels){    
+    Mat debugKernel = text(kernel);    
     Rect expanded = expandKernel(kernel, tree, tbl);
     Mat region = localText(expanded);
-    vector<int> inside = search_tree(tree, expanded);
-    vector<TextLine> ltl;
-    for (int v : inside){
-      ltl.push_back(tls[v]);
-    }
-    if (verticalArrangement(region, ltl))
-      nrlTables.push_back(expanded);
+    ComponentStats cs(expanded, 1, 0);//last argument 0 is a dummy value
+    if (f(region, cs))
+      nrlTables.push_back(kernel);
   }
   return nrlTables;
 }

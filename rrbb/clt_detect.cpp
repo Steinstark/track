@@ -67,7 +67,7 @@ vector<Rect> findCLT(ImageDataBox& imd, ImageMeta& im){
     Mat skewedRegion = text(candidates[i]), correctedRegion;
     rotate(skewedRegion, correctedRegion, angle);
     ComponentStats cs(candidates[i], 1, i);
-    if (verifyRLT(correctedRegion, im, imd.textData, cs))
+    if (verify(correctedRegion, im, imd.textData, cs))
       tables.push_back(candidates[i]);
   }
   return tables;

@@ -10,13 +10,12 @@ using namespace std;
 using namespace cv;
 using namespace tree;
 
-bool isHorizontalLine(ImageMeta& im, const ComponentStats& cs){
-  return cs.hwratio > 0.05 &&
-    cs.r.width > im.width/8;    
+bool isHorizontalLine(const ComponentStats& cs){
+  return cs.hwratio > 0.05;  
 }
 
 bool regionIsRectangle(const ComponentStats& cs){
-  return (cs.bb_area - cs.area)/(double)cs.bb_area > 0.6;
+  return (cs.bb_area - cs.area)/(double)cs.bb_area > 0.85;
 }
 
 bool isColorBlock(ImageMeta& im, const ComponentStats& cs){
@@ -24,15 +23,12 @@ bool isColorBlock(ImageMeta& im, const ComponentStats& cs){
   Point tl(r.x-r.width, r.y-r.height);
   Rect vicinity(tl.x, tl.y, r.width*3, r.height*3);
   return search_tree(im.nt_tree, vicinity).size() > 3 && cs.area/cs.bb_area >= 0.9;
+  }
+
+bool containsManyElements(RT& tree, const ComponentStats& cs){
+  return search_tree(tree, cs.r).size() >= 10;
 }
 
-bool containsManyTextElements(ImageMeta& im, const ComponentStats& cs){
-  return search_tree(im.t_tree, cs.r).size() >= 10;
-}
-
-
-//TODO
-//all primitives below
 bool manySmallRect(Mat& text, ComponentStats& cs){  
   Mat cc, stats, centroids;
   int labels = connectedComponentsWithStats(text, cc, stats, centroids, 8, CV_32S);
@@ -95,6 +91,8 @@ bool verticalArrangement(Mat& textTable, vector<TextLine>& lines){
   reduce(textTable, hist, 0, CV_REDUCE_SUM, CV_64F);
   find_lines(hist, text, space);
   vector<vector<TextLine> > partitions = partitionBlocks(lines, space);
+  if (partitions.size() < 2)
+    return false;
   double ms = mean<Line, int>(space, [](Line l){return l.length();});
   for (int i = 0; i < partitions.size(); i++){
     vector<Rect> merged = verticalMerge(partitions[i]);
@@ -114,15 +112,43 @@ bool hasLowDensity(ComponentStats& cs){
 }
 
 
-bool noCut(ImageMeta& im, vector<ComponentStats>& textData, Rect r){
-  vector<int> hits = search_tree(im.t_tree, r);
-  for (int e : hits){
-    if ((r | textData[e].r).area() > r.area())
-      return false;
-  }
-  return true;
+bool noCut(RT& tree, Rect& r){
+  return cut_tree(tree, r);
 }
 
-bool onlyText(ImageMeta& im, Rect r){
+/*bool onlyText(ImageMeta& im, Rect r){
   return search_tree(im.nt_tree, r).size() < 2;
+  }*/
+
+bool verify(Mat& region,
+	       ImageMeta& im,
+	       vector<ComponentStats>& textData,
+	       ComponentStats& cs)
+{
+  if (hasLowDensity(cs) &&
+      regionIsRectangle(cs) &&
+      manySmallRect(region, cs) &&
+      noCut(im.t_tree, cs.r)){
+    vector<TextLine> tls = linesInRegion(im.t_tree, textData, cs.r);
+    Mat tableCopy = region.clone();
+    for (int i = 0; i < tls.size(); i++){
+      rectangle(tableCopy, tls[i].getBox(), Scalar(255), CV_FILLED);
+    }
+    return verticalArrangement(tableCopy, tls);  
+  }
+  return false;
+}
+
+bool verifyReg(Mat& region){
+  vector<ComponentStats> stats = statistics(region);
+  RT tree;
+  Rect r(0,0, region.cols, region.rows);
+  for (int i = 0; i < stats.size(); i++)
+    insert2tree(tree, stats[i].r, i); 
+  vector<TextLine> tls = linesInRegion(tree, stats, r);
+  Mat tableCopy = region.clone();
+  for (int i = 0; i < tls.size(); i++){
+    rectangle(tableCopy, tls[i].getBox(), Scalar(255), CV_FILLED);
+  }
+  return verticalArrangement(tableCopy, tls);  
 }

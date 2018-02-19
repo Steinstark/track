@@ -80,8 +80,8 @@ vector<TextLine> findLines(vector<Rect>& rects){
 }
 
 
-vector<TextLine> linesInRegion(ImageMeta& im, vector<ComponentStats> textData, Rect region){
-  vector<int> inside = search_tree(im.t_tree, region);
+vector<TextLine> linesInRegion(RT& tree, vector<ComponentStats> textData, Rect region){
+  vector<int> inside = search_tree(tree, region);
   vector<Rect> rects;
   for (int i = 0; i < inside.size(); i++){
     rects.push_back(textData[inside[i]].r-region.tl());

@@ -4,6 +4,7 @@
 #include <vector>
 #include <opencv2/opencv.hpp>
 #include "utility.hpp"
+#include "tree_helper.hpp"
 
 struct TextLine{
   std::vector<cv::Rect> elements;  
@@ -13,7 +14,7 @@ struct TextLine{
   TextLine(){};
 };
 
-std::vector<TextLine> linesInRegion(ImageMeta& im, std::vector<ComponentStats> textData, cv::Rect region);
+std::vector<TextLine> linesInRegion(tree::RT& tree, std::vector<ComponentStats> textData, cv::Rect region);
 std::vector<TextLine> findLines(std::vector<cv::Rect>& rects);
 
 #endif

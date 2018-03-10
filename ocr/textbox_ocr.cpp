@@ -19,7 +19,7 @@ Pix *mat8ToPix(const cv::Mat& mat8)
 }
 
 vector<string> textbox_content(const Mat& bw, const vector<Rect>& rv){
-  const string path = "/usr/share/tesseract-ocr/tessdata";
+  const string path = "../tessdata";
   tesseract::TessBaseAPI *api = new tesseract::TessBaseAPI();
   if (api->Init(path.c_str(), "eng")) {
     fprintf(stderr, "Could not initialize tesseract.\n");

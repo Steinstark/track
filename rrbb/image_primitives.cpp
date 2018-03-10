@@ -116,9 +116,17 @@ bool noCut(RT& tree, Rect& r){
   return cut_tree(tree, r);
 }
 
-/*bool onlyText(ImageMeta& im, Rect r){
-  return search_tree(im.nt_tree, r).size() < 2;
-  }*/
+bool mostlyText(vector<ComponentStats> stats){
+  if (stats.size() < 2)
+    return true;
+  int area = 0;
+  Rect r = stats[0].r;
+  for (auto stat : stats){
+    r |= stat.r;
+    area += stat.r.area();
+  }
+  return 1.2*r.area() > area;
+}
 
 bool verify(Mat& region,
 	       ImageMeta& im,
@@ -139,16 +147,17 @@ bool verify(Mat& region,
   return false;
 }
 
-bool verifyReg(Mat& region){
-  vector<ComponentStats> stats = statistics(region);
+bool verifyReg(Mat& text, Mat& nontext){
+  vector<ComponentStats> statsText = statistics(text);
+  vector<ComponentStats> statsNontext = statistics(nontext);
   RT tree;
-  Rect r(0,0, region.cols, region.rows);
-  for (int i = 0; i < stats.size(); i++)
-    insert2tree(tree, stats[i].r, i); 
-  vector<TextLine> tls = linesInRegion(tree, stats, r);
-  Mat tableCopy = region.clone();
+  Rect r(0,0, text.cols, text.rows);
+  for (int i = 0; i < statsText.size(); i++)
+    insert2tree(tree, statsText[i].r, i); 
+  vector<TextLine> tls = linesInRegion(tree, statsText, r);
+  Mat tableCopy = text.clone();
   for (int i = 0; i < tls.size(); i++){
     rectangle(tableCopy, tls[i].getBox(), Scalar(255), CV_FILLED);
   }
-  return verticalArrangement(tableCopy, tls);  
+  return verticalArrangement(tableCopy, tls) && mostlyText(statsNontext);  
 }

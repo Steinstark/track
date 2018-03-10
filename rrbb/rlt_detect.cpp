@@ -24,7 +24,7 @@ list<Rect> findRLT(ImageDataBox& imd, ImageMeta& im, function<bool(Mat&, Compone
 {
   list<ComponentStats> candidates;
   vector<ComponentStats>& nontextData = imd.nontextData;
-  Mat& text = imd.text;
+  Mat& text = imd.text, nontext = imd.nontext;
   for (ComponentStats& cs: nontextData){
     if (candidateRLT(im, cs)){
       candidates.push_back(cs);
@@ -32,10 +32,11 @@ list<Rect> findRLT(ImageDataBox& imd, ImageMeta& im, function<bool(Mat&, Compone
   }
   list<Rect> verified;
   for (auto it = candidates.begin(); it != candidates.end(); it++){
-    Mat skewedRegion = text(it->r), correctedRegion;
-    double angle = counterRotAngle(skewedRegion);
-    rotate(skewedRegion, correctedRegion, angle);
-    if (verifyReg(correctedRegion)){
+    Mat skewedText = text(it->r), skewedNontext = nontext(it->r), correctedText, correctedNontext;
+    double angle = counterRotAngle(skewedText);
+    rotate(skewedText, correctedText, angle);
+    rotate(skewedNontext, correctedNontext, angle);
+    if (verifyReg(correctedText, correctedNontext)){
       verified.push_back(it->r);
     }
   }

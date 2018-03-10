@@ -17,6 +17,6 @@ bool manySmallRect(cv::Mat& text, ComponentStats& cs);
 bool noCut(ImageMeta& im, std::vector<ComponentStats>& textData, cv::Rect r);
 bool onlyText(ImageMeta& im, cv::Rect r);
 bool verify(cv::Mat& region, ImageMeta& im, std::vector<ComponentStats>& textData, ComponentStats& cs);
-bool verifyReg(cv::Mat& region);
+bool verifyReg(cv::Mat& text, cv::Mat& nontext);
 
 #endif

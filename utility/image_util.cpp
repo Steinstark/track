@@ -4,7 +4,6 @@
 using namespace std;
 using namespace cv;
 
-
 double rotAngle(RotatedRect rr){
   Rect bb = rr.boundingRect();
   Point2f cp = rr.center;
@@ -49,6 +48,12 @@ Mat gray2binary(const Mat& gray){
   Mat bw;
   adaptiveThreshold(~gray, bw, 255, CV_ADAPTIVE_THRESH_GAUSSIAN_C,THRESH_BINARY, 15, -2);
   return bw;
+}
+
+Mat color2binary(const Mat& img){
+  Mat gray;
+  cvtColor(img, gray, COLOR_BGR2GRAY);
+  return gray2binary(gray);  
 }
 
 void move2(Mat& from, Mat& to, const Mat& cc, int i){

@@ -13,6 +13,8 @@ void rotate(cv::Mat& src, cv::Mat& dst, double angle);
 
 cv::Rect pos2rect(int l, int t, int r, int b);
 
+cv::Mat color2binary(const cv::Mat& img);
+
 cv::Mat gray2binary(const cv::Mat& gray);
 
 cv::Rect pos2rect(int l, int t, int r, int b);

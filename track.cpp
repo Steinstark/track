@@ -26,6 +26,12 @@ Mat pdf2mat(string pdf){
   return opencvImage;
 }
 
+Mat color2binary(Mat img){
+  Mat gray;
+  cvtColor(img, gray, COLOR_BGR2GRAY);
+  return gray2binary(gray);  
+}
+
 int main(int argc, char** argv){
   if (argc != 2){
     cout << "Invalid number of arguments" << endl;
@@ -37,11 +43,7 @@ int main(int argc, char** argv){
     img = pdf2mat(file);
   else
     img = imread(file.c_str());
-  Mat gray;
-  cvtColor(img, gray, COLOR_BGR2GRAY);
-  if (!gray.data)
-    cerr << "Problem loading image. " << endl;
-  Mat bw = gray2binary(gray);
+  Mat bw = color2binary(img);
   list<Rect> tables = detect_tables(bw);
   for (Rect& table : tables){
     vector<Rect> cells = detect_cells(bw, table);

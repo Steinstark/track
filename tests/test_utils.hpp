@@ -4,7 +4,7 @@
 #include <string>
 #include <list>
 #include <vector>
-#include <set>
+#include <map>
 #include <functional>
 #include <opencv2/opencv.hpp>
 
@@ -15,19 +15,24 @@ const std::string tiff = ".tiff";
 
 namespace testutils{
   struct Page{
-    int number;
     std::list<cv::Rect> tables;
+    std::list<cv::Rect> gt;
   };
   
   struct Document{
     std::string name;
-    std::list<Page>  pages;
+    std::map<int, Page>  pages;
+    void insert(int pageNumber, Page page);
+    void insertGT(int pageNumber, cv::Rect boundingBox);
   };
   
   std::set<std::string> files_in_folder(std::string path, std::function<bool(std::string&)> filter);
   bool isType(const std::string type, const std::string& name);
   std::string boundName(std::string str);
-  std::string(getBase(std::string str));
+  std::string getBase(std::string str);
+  std::string getName(std::string str);
+  int getNumber(std::string str);
+  void attachGT(Document& doc);
 }
 //cv::Rect translate(std::string pdf, cv::Rect bb);
 

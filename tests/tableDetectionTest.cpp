@@ -14,24 +14,24 @@ using namespace std;
 using namespace cv;
 using namespace testutils;
 
-Page detectPage(const string pageName, int pageNumber){
-  Mat img = imread(pageName.c_str());
+Page detectPage(const string filename){
+  Mat img = imread(filename.c_str());
   Mat bw = color2binary(img);
   Page page;
   page.tables = detect_tables(bw);
-  page.number = pageNumber;
   return page;
 }
 
 Document detectDocument(set<string>::iterator first, set<string>::iterator last){
   Document doc;
   doc.name = getBase(*first);
-  int number = 1;
   while (first != last){
-    Page p = detectPage(*first, number);
-    doc.pages.push_back(p);
+    Page p = detectPage(*first);
+    int n = getNumber(*first);
+    doc.insert(n, p);
     first++;
   }
+  attachGT(doc);
   return doc;
 }
 
@@ -42,7 +42,7 @@ list<Document> detectAll(set<string>& files){
   while (first != files.end()){
     auto last = files.upper_bound(boundName(*first));
     Document doc = detectDocument(first, last);
-    cout << "Finished processing: " << getBase(*first) << endl;
+    cout << "Finished processing: " << getBase(getName(*first)) << endl;
     documents.push_back(doc);
     first = last;
   }
@@ -52,17 +52,6 @@ list<Document> detectAll(set<string>& files){
 int main(int argc, char** argv){
   set<string> files = files_in_folder(string(argv[1]), bind(isType, "png", placeholders::_1));
   list<Document> documents = detectAll(files);
-				      /*  for (string file : files){
-    vvr gt, cells;
-    vector<string> text;
-    getGroundTruth(file, gt, cells, text);
-    for (int i = 0; i < gt.size(); i++){
-      stringstream ss;
-      ss << file << "_" << i << tiff;
-      vector<Rect> d = detect_tables(ss.str());
-      cout << compare(gt[i], d) << endl;
-    }
-    }*/
   return 0;
 }
  

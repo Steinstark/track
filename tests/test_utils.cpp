@@ -6,14 +6,22 @@
 #include <sstream>
 #include <iomanip>
 #include <boost/filesystem.hpp>
-//FIXME replace RTree.h with boosst
-//#include "RTree.h" 
-//#include "pugixml.hpp"
+#include <opencv2/opencv.hpp>
+#include "image_util.hpp"
+#include "pugixml.hpp"
 
 using namespace std;
+using namespace cv;
 using namespace boost::filesystem;
-//using namespace pugi;
+using namespace pugi;
 
+void testutils::Document::insert(int pageNumber, Page p){
+  pages[pageNumber] = p;
+}
+
+void testutils::Document::insertGT(int pageNumber, Rect boundingBox){
+  pages[pageNumber].gt.push_back(boundingBox);
+}
 
 string remove_extension(const string& file){
   size_t lastdot = file.find_last_of(".");
@@ -43,9 +51,47 @@ string testutils::getBase(string str){
   return str.substr(0, str.find_last_of("_"));
 }
 
+string testutils::getName(string str){
+  return str.substr(str.find_last_of("/")+1);
+}
+
+int testutils::getNumber(string str){
+  int first = str.find_last_of("_");
+  int last = str.find_last_of(".");
+  int numb;
+  istringstream(str.substr(first, last-first)) >> numb;
+  return numb;
+}
+
 string testutils::boundName(string str){
   return getBase(str) + "_" + "z"; 
 }
+
+Rect scaleAndTranslate(Rect& r){
+  return r;
+}
+
+void testutils::attachGT(Document& doc){
+  const string reg = "-reg.xml";
+  const string text = "-str.xml";
+  const string regname = doc.name + reg;
+  const string textname = doc.name + text;
+  xml_document xml;
+  xml.load_file(regname.c_str());
+  xpath_node_set rns = xml.select_nodes("//region");
+  for (xpath_node rn : rns){
+    xml_node region = rn.node();
+    int number =  region.attribute("page").as_int();
+    xml_node b = region.child("bounding-box");
+    Rect r = pos2rect(b.attribute("x1").as_int(),
+		      b.attribute("y1").as_int(),
+		      b.attribute("x2").as_int(),
+		      b.attribute("y2").as_int());
+    Rect fixedBox =  scaleAndTranslate(r);
+    doc.insertGT(rn.node().attribute("page").as_int(), fixedBox);
+  }
+}
+
 /*
 bool isInside(const Rect& outer, const Rect& inner){
   return outer.x <= inner.x &&

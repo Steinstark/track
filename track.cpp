@@ -26,12 +26,6 @@ Mat pdf2mat(string pdf){
   return opencvImage;
 }
 
-Mat color2binary(Mat img){
-  Mat gray;
-  cvtColor(img, gray, COLOR_BGR2GRAY);
-  return gray2binary(gray);  
-}
-
 int main(int argc, char** argv){
   if (argc != 2){
     cout << "Invalid number of arguments" << endl;

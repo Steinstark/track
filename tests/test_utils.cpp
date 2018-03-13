@@ -1,4 +1,4 @@
-#include "test_engine.hpp"
+#include "test_utils.hpp"
 #include <string>
 #include <vector>
 #include <set>
@@ -6,18 +6,14 @@
 #include <sstream>
 #include <iomanip>
 #include <boost/filesystem.hpp>
-#include <opencv2/opencv.hpp>
-#include "RTree.h"
-#include "pugixml.hpp"
-#include <Magick++.h>
+//FIXME replace RTree.h with boosst
+//#include "RTree.h" 
+//#include "pugixml.hpp"
 
 using namespace std;
-using namespace cv;
 using namespace boost::filesystem;
-using namespace Magick;
-using namespace pugi;
+//using namespace pugi;
 
-using vvr = vector<vector<Rect> >;
 
 string remove_extension(const string& file){
   size_t lastdot = file.find_last_of(".");
@@ -25,30 +21,32 @@ string remove_extension(const string& file){
   return file.substr(0, lastdot);
 }
 
-bool isPDF(const string& file){
-  size_t lastdot = file.find_last_of(".");
-  return file.substr(lastdot) == ".pdf";
+bool testutils::isType(const string type, const string& name){
+  size_t lastdot = name.find_last_of(".");
+  return name.substr(lastdot+1) == type;
 }
 
-vector<string> files_in_folder(string dir){
+set<string> testutils::files_in_folder(string dir, function<bool(string&)> filter = [](string&){return true;}){
   set<string> unique_files;
   path p(dir);
   directory_iterator end_itr;
   for (directory_iterator itr(p); itr != end_itr; ++itr){
     string file = canonical(itr->path()).string();      
-    if (is_regular_file(file) && isPDF(file)){
-      unique_files.insert(remove_extension(file));
+    if (is_regular_file(file) && filter(file)){
+      unique_files.insert(file);
     }
   }
-  return vector<string>(unique_files.begin(), unique_files.end());
+  return unique_files;
 }
 
-bool callback(int id, void* arg){
-  vector<int>* v = static_cast<vector<int>*>( arg );
-  v->push_back(id);
-  return true;
+string testutils::getBase(string str){
+  return str.substr(0, str.find_last_of("_"));
 }
 
+string testutils::boundName(string str){
+  return getBase(str) + "_" + "z"; 
+}
+/*
 bool isInside(const Rect& outer, const Rect& inner){
   return outer.x <= inner.x &&
     outer.y <= inner.y &&
@@ -57,7 +55,7 @@ bool isInside(const Rect& outer, const Rect& inner){
 }
 
 double compare(const vector<Rect>& gt, const vector<Rect>& d){
-  RTree<int, int, 2, float> tree;
+  /* RTree<int, int, 2, float> tree;
   int incorrect = 0;
   int correct = 0;
   for (int i = 0; i < gt.size(); i++){
@@ -78,32 +76,12 @@ double compare(const vector<Rect>& gt, const vector<Rect>& d){
   }
   if (correct + incorrect == 0)
     return 1;
-  return (double)correct/(correct + incorrect);
+    return (double)correct/(correct + incorrect);*
+  return 0.0;
 }
 
 Rect translate(int height, Rect bb){
   return Rect(bb.x, height - bb.y, bb.width, bb.height); 
-}
-
-vector<string> save(string in, string out){
-  InitializeMagick("--quiet");
-  vector<Image> imageList;
-  readImages(&imageList, in);
-  int index = out.find_last_of(".");
-  vector<string> files;
-  for (int i = 0; i < imageList.size(); i++){    
-    ostringstream oss;
-    oss << out.substr(0, index) << "_" << i << out.substr(index);    
-    imageList[i].write(oss.str());
-    files.push_back(oss.str());
-  }  
-  return files;
-}
-
-int getHeight(string pdf){
-  InitializeMagick(NULL);
-  Image img(pdf);
-  return img.rows();  
 }
 
 void getGroundTruth(string file, vvr& table_regions, vvr& cells, vector<string>& text){
@@ -113,7 +91,7 @@ void getGroundTruth(string file, vvr& table_regions, vvr& cells, vector<string>&
   xpath_node_set rns = doc.select_nodes("//region");
   vector<Rect> page;
   int page_index = 1;
-  int height = getHeight(file+pdf);
+  int height = 1;//getHeight(file+pdf);
   for (xpath_node rn : rns){
     while (rn.node().attribute("page").as_int() > page_index){
       table_regions.push_back(page);
@@ -140,3 +118,4 @@ void getGroundTruth(string file, vvr& table_regions, vvr& cells, vector<string>&
   }
   table_regions.push_back(page);
 }
+*/

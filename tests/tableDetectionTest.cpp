@@ -7,12 +7,14 @@
 #include <functional>
 #include <opencv2/opencv.hpp>
 #include "test_utils.hpp"
+#include "dataset_utils.hpp"
 #include "detect_table.hpp"
 #include "image_util.hpp"
 
 using namespace std;
 using namespace cv;
 using namespace testutils;
+using namespace dataset;
 
 Page detectPage(const string filename){
   Mat img = imread(filename.c_str());
@@ -42,7 +44,8 @@ list<Document> detectAll(set<string>& files){
   while (first != files.end()){
     auto last = files.upper_bound(boundName(*first));
     Document doc = detectDocument(first, last);
-    cout << "Finished processing: " << getBase(getName(*first)) << endl;
+    Result result = doc.evaluate();
+    cout << "Finished processing: " << getBase(getName(*first)) << result << endl;
     documents.push_back(doc);
     first = last;
   }

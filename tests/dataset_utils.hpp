@@ -12,6 +12,8 @@ namespace dataset{
     int countGT, correct, incorrect, pure, complete;
     Result(int countGT): countGT(countGT), correct(0), incorrect(0), pure(0), complete(0) {}
     Result& operator+=(const Result& other);
+    double recall();
+    double precision();
     void update(bool pure, bool complete);
     friend std::ostream& operator<< (std::ostream& stream, const Result& result){
       stream << " Correct: "
@@ -25,6 +27,7 @@ namespace dataset{
   };
   
   struct Page{
+    cv::Size size;
     std::list<cv::Rect> tables;
     std::list<cv::Rect> gt;
     Result evaluate();
@@ -33,9 +36,12 @@ namespace dataset{
   struct Document{
     std::string name;
     std::map<int, Page>  pages;
+    Document(std::string name): name(name){}
     void insert(int pageNumber, Page page);
     void insertGT(int pageNumber, cv::Rect boundingBox);
+    void attachGT();
     Result evaluate();
+    
   };
 
   std::string boundName(std::string str);

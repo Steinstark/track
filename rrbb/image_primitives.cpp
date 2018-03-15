@@ -128,6 +128,15 @@ bool mostlyText(vector<ComponentStats> stats){
   return 1.2*r.area() > area;
 }
 
+bool manyRows(Mat& img){
+  Mat hist;
+  reduce(img, hist, 1, CV_REDUCE_SUM, CV_64F);
+  transpose(hist, hist);
+  vector<Line> text, space;
+  find_lines(hist, text, space);
+  return text.size() > 1;
+}
+
 bool verify(Mat& region,
 	       ImageMeta& im,
 	       vector<ComponentStats>& textData,
@@ -159,5 +168,9 @@ bool verifyReg(Mat& text, Mat& nontext){
   for (int i = 0; i < tls.size(); i++){
     rectangle(tableCopy, tls[i].getBox(), Scalar(255), CV_FILLED);
   }
-  return verticalArrangement(tableCopy, tls) && mostlyText(statsNontext);  
+  bool lowDensity = true;;
+  for (ComponentStats cs : statsNontext){
+    lowDensity = hasLowDensity(cs);
+  }
+  return verticalArrangement(tableCopy, tls) && mostlyText(statsNontext) && lowDensity && manyRows(text);  
 }

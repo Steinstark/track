@@ -1,4 +1,5 @@
 #include "image_primitives.hpp"
+#include "image_util.hpp"
 #include <opencv2/opencv.hpp>
 #include <vector>
 #include <functional>
@@ -107,11 +108,6 @@ bool verticalArrangement(Mat& textTable, vector<TextLine>& lines){
   return true;
 }
 
-bool isImage(ComponentStats& cs){
-  return !isLine(cs) && cs.density > 0.15;
-}
-
-
 bool noCut(RT& tree, Rect& r){
   return cut_tree(tree, r);
 }
@@ -123,9 +119,10 @@ bool mostlyText(vector<ComponentStats> stats){
   Rect r = stats[0].r;
   for (auto stat : stats){
     r |= stat.r;
-    area += stat.r.area();
+    if (!isLine(stat))
+      area += stat.area;
   }
-  return 1.2*r.area() > area;
+  return 0.01*r.area() > area;
 }
 
 bool manyRows(Mat& img){
@@ -139,7 +136,6 @@ bool manyRows(Mat& img){
 
 bool verifyReg(Mat& text, Mat& nontext){
   vector<ComponentStats> statsText = statistics(text);
-  vector<ComponentStats> statsNontext = statistics(nontext);
   RT tree;
   Rect r(0,0, text.cols, text.rows);
   for (int i = 0; i < statsText.size(); i++)
@@ -147,13 +143,12 @@ bool verifyReg(Mat& text, Mat& nontext){
   vector<TextLine> tls = linesInRegion(tree, statsText, r);
   Mat tableCopy = text.clone();
   for (int i = 0; i < tls.size(); i++){
-    rectangle(tableCopy, tls[i].getBox(), Scalar(255), CV_FILLED);
+    Rect r = tls[i].getBox();
+    rectangle(tableCopy, r, Scalar(255), CV_FILLED);
   }
-  bool image;
-  for (ComponentStats cs : statsNontext){
-    image = isImage(cs);
-    if (image)
-      break;
-  }
-  return verticalArrangement(tableCopy, tls) && mostlyText(statsNontext) && !image && manyRows(text);  
+  Mat mask, withoutLines;
+  mask = lineMask(nontext);
+  bitwise_not(mask, withoutLines, nontext);
+  vector<ComponentStats> statsNontext = statistics(withoutLines);
+  return verticalArrangement(tableCopy, tls) && mostlyText(statsNontext) && manyRows(text);  
 }

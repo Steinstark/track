@@ -5,6 +5,6 @@
 #include <functional>
 #include <opencv2/opencv.hpp>
 
-std::list<cv::Rect> findNRLT(cv::Mat& text, std::list<cv::Rect> tables, std::function<bool(cv::Mat&, ComponentStats&)> f);
+std::list<cv::Rect> findNRLT(cv::Mat& text, cv::Mat& nontext, std::list<cv::Rect> tables);
 
 #endif

@@ -7,6 +7,6 @@
 #include "utility.hpp"
 
 
-std::list<cv::Rect> findRLT(ImageDataBox& imd, ImageMeta& im, std::function<bool(cv::Mat&, ComponentStats&)> f);
+std::list<cv::Rect> findRLT(ImageDataBox& imd, ImageMeta& im);
 
 #endif

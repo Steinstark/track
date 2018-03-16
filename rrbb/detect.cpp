@@ -42,12 +42,10 @@ list<Rect> mergeIntersecting(list<Rect>& tables){
 list<Rect> detect(Mat& text, Mat& nontext){
   ImageDataBox imd(text, nontext);
   ImageMeta im(text.cols, text.rows, imd.textData, imd.nontextData);
-  function<bool(Mat&, ComponentStats&)> f = bind(verify,placeholders::_1, im, imd.textData, placeholders::_2);
-  list<Rect> rlTables = findRLT(imd, im, f);  
+  list<Rect> rlTables = findRLT(imd, im);  
   //vector<Rect> colorTables = findCLT(imd, im); //is untested. Result will not be appended even assuming it works
-  //list<Rect> nrlTables = findNRLT(text, rlTables, f); //currently only serve to degrade performance
-  //rlTables.insert(rlTables.end(), nrlTables.begin(), nrlTables.end());
-  //  rlTables.splice(rlTables.end(), nrlTables);
+  //  list<Rect> nrlTables = findNRLT(text, nontext, rlTables); //currently only serve to degrade performance
+  //rlTables.splice(rlTables.end(), nrlTables);
   list<Rect> merged = mergeIntersecting(rlTables);
   return merged;
 }

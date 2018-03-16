@@ -10,8 +10,8 @@ using namespace std;
 using namespace cv;
 using namespace tree;
 
-bool isHorizontalLine(const ComponentStats& cs){
-  return cs.hwratio > 0.05;  
+bool isLine(const ComponentStats& cs){
+  return cs.hwratio < 0.10;  
 }
 
 bool regionIsRectangle(const ComponentStats& cs){
@@ -101,14 +101,14 @@ bool verticalArrangement(Mat& textTable, vector<TextLine>& lines){
     double lv = welford<Rect, int>(merged, [](Rect r){return r.x;});
     double cv = welford<Rect, double>(merged, [](Rect r){return (r.x+r.br().x)*0.5;});
     double rv = welford<Rect, int>(merged, [](Rect r){return r.br().x;});
-    if (lv >= met || cv >= met || rv >= met || ms <= mes)
+    if (lv >= met && cv >= met && rv >= met || ms <= mes)
       return false;    
   }
   return true;
 }
 
-bool hasLowDensity(ComponentStats& cs){
-  return (double)cs.area/cs.bb_area;
+bool isImage(ComponentStats& cs){
+  return !isLine(cs) && cs.density > 0.15;
 }
 
 
@@ -137,25 +137,6 @@ bool manyRows(Mat& img){
   return text.size() > 1;
 }
 
-bool verify(Mat& region,
-	       ImageMeta& im,
-	       vector<ComponentStats>& textData,
-	       ComponentStats& cs)
-{
-  if (hasLowDensity(cs) &&
-      regionIsRectangle(cs) &&
-      manySmallRect(region, cs) &&
-      noCut(im.t_tree, cs.r)){
-    vector<TextLine> tls = linesInRegion(im.t_tree, textData, cs.r);
-    Mat tableCopy = region.clone();
-    for (int i = 0; i < tls.size(); i++){
-      rectangle(tableCopy, tls[i].getBox(), Scalar(255), CV_FILLED);
-    }
-    return verticalArrangement(tableCopy, tls);  
-  }
-  return false;
-}
-
 bool verifyReg(Mat& text, Mat& nontext){
   vector<ComponentStats> statsText = statistics(text);
   vector<ComponentStats> statsNontext = statistics(nontext);
@@ -168,9 +149,11 @@ bool verifyReg(Mat& text, Mat& nontext){
   for (int i = 0; i < tls.size(); i++){
     rectangle(tableCopy, tls[i].getBox(), Scalar(255), CV_FILLED);
   }
-  bool lowDensity = true;;
+  bool image;
   for (ComponentStats cs : statsNontext){
-    lowDensity = hasLowDensity(cs);
+    image = isImage(cs);
+    if (image)
+      break;
   }
-  return verticalArrangement(tableCopy, tls) && mostlyText(statsNontext) && lowDensity && manyRows(text);  
+  return verticalArrangement(tableCopy, tls) && mostlyText(statsNontext) && !image && manyRows(text);  
 }

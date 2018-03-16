@@ -6,7 +6,7 @@
 #include "utility.hpp"
 #include "tree_helper.hpp"
 
-bool isHorizontalLine(const ComponentStats& cs);
+bool isLine(const ComponentStats& cs);
 bool regionIsRectangle(const ComponentStats& cs);
 bool isColorBlock(ImageMeta& im, const ComponentStats& cs);
 bool containsManyElements(tree::RT& tree, const ComponentStats& cs);

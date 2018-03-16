@@ -16,11 +16,11 @@ using namespace tree;
 bool candidateRLT(ImageMeta& im, ComponentStats& cs){
   return
     containsManyElements(im.t_tree, cs) &&
-    (isHorizontalLine(cs) ||
+    (isLine(cs) ||
      regionIsRectangle(cs));
 }
 
-list<Rect> findRLT(ImageDataBox& imd, ImageMeta& im, function<bool(Mat&, ComponentStats&)> f)
+list<Rect> findRLT(ImageDataBox& imd, ImageMeta& im)
 {
   list<ComponentStats> candidates;
   vector<ComponentStats>& nontextData = imd.nontextData;

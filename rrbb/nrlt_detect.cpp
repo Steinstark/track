@@ -74,7 +74,7 @@ Rect expandKernel(Rect& kernel, RT& tree, vector<Rect>& tbl){
   return a|b;  
 }
 
-list<Rect> findNRLT(Mat& text, list<Rect> tables, function<bool(Mat&, ComponentStats&)> f){
+list<Rect> findNRLT(Mat& text, Mat& nontext, list<Rect> tables){
   Mat localText = text.clone();
   for (Rect& table : tables){
     Mat roi = localText(table);
@@ -95,9 +95,9 @@ list<Rect> findNRLT(Mat& text, list<Rect> tables, function<bool(Mat&, ComponentS
   for (Rect& kernel : kernels){    
     Mat debugKernel = text(kernel);    
     Rect expanded = expandKernel(kernel, tree, tbl);
-    Mat region = localText(expanded);
-    ComponentStats cs(expanded, 1, 0);//last argument 0 is a dummy value
-    if (f(region, cs))
+    Mat regionText = localText(expanded);
+    Mat regionNontext = nontext(expanded);
+    if (verifyReg(regionText, regionNontext))
       nrlTables.push_back(kernel);
   }
   return nrlTables;

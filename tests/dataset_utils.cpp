@@ -45,7 +45,7 @@ Result dataset::Page::evaluate(){
     list<Rect> hits = search_tree(tree, table);
     pure = hits.size() == 1;
     for (Rect hit : hits){
-      if  (hit == (hit & table)){
+      if  (hit.area()*0.95 <= (hit & table).area()){
 	complete = true;
 	break;
       }
@@ -57,16 +57,14 @@ Result dataset::Page::evaluate(){
 
 double dataset::Result::precision(){
   if (correct + incorrect == 0){
-    if (countGT == 0) return 1;
-    else return 0;
+    return 1;
   }
   return correct/(correct + incorrect);
 }
 
 double dataset::Result::recall(){
   if (countGT == 0){
-    if (correct == 0) return 1;
-    else return 0;
+    return 1;
   }
   return correct/countGT;
 }

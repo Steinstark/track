@@ -34,9 +34,8 @@ Document detectDocument(set<string>::iterator first, set<string>::iterator last)
     first++;
   }
   attachGT(doc);
-  /*
   //TESTING ONLY  
-  namedWindow("page", WINDOW_NORMAL);
+  /*  namedWindow("page", WINDOW_NORMAL);
   for (pair<int, Page>  p : doc.pages){
     string filename = doc.name + "_" + to_string(p.first) + ".png"; 
     Mat img = imread(filename);

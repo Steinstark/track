@@ -5,6 +5,9 @@
 #include <opencv2/opencv.hpp>
 
 void move2(cv::Mat& from, cv::Mat& to, const cv::Mat& cc, int i);
+void remove_lines(cv::Mat& from, cv::Mat& to);
+cv::Mat lineMask(cv::Mat& img);
+  
 
 double counterRotAngle(cv::Mat& img);
 double counterRotAngle(std::vector<cv::Point>& contour);

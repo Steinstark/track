@@ -56,6 +56,23 @@ Mat color2binary(const Mat& img){
   return gray2binary(gray);  
 }
 
+Mat lineMask(Mat& img){
+  Mat element = getStructuringElement(MORPH_RECT, Size(1, 29), Point(-1, -1));
+  Mat vertical, horizontal;
+  erode(img, vertical, element);
+  dilate(vertical, vertical, element);
+  transpose(element, element);
+  erode(img, horizontal, element);
+  dilate(horizontal, horizontal, element);
+  return horizontal | vertical;
+}
+
+void remove_lines(Mat& from, Mat& to){
+  Mat lines = lineMask(from);
+  to |= lines;
+  bitwise_not(lines, from, from);
+}
+
 void move2(Mat& from, Mat& to, const Mat& cc, int i){
   Mat mask(cc.size(), CV_8UC1, Scalar(0));
   mask = mask | (cc==i);

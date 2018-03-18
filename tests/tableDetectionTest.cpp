@@ -16,6 +16,8 @@ using namespace cv;
 using namespace testutils;
 using namespace dataset;
 
+bool TEST = false;
+
 Page detectPage(const string& filename){
   Mat img = imread(filename.c_str());
   Mat bw = color2binary(img);
@@ -34,20 +36,21 @@ Document detectDocument(set<string>::iterator first, set<string>::iterator last)
     first++;
   }
   attachGT(doc);
-  //TESTING ONLY  
-  /*  namedWindow("page", WINDOW_NORMAL);
-  for (pair<int, Page>  p : doc.pages){
-    string filename = doc.name + "_" + to_string(p.first) + ".png"; 
-    Mat img = imread(filename);
-    for (Rect r : p.second.tables){
-      rectangle(img, r, Scalar(255, 0, 0), 5);      
+  if (TEST){
+    namedWindow("page", WINDOW_NORMAL);
+    for (pair<int, Page>  p : doc.pages){
+      string filename = doc.name + "_" + to_string(p.first) + ".png"; 
+      Mat img = imread(filename);
+      for (Rect r : p.second.tables){
+	rectangle(img, r, Scalar(255, 0, 0), 5);      
+      }
+      for (Rect r : p.second.gt){
+	rectangle(img, r, Scalar(0, 255, 0), 5);
+      }
+      imshow("page", img);
+      waitKey(0);
     }
-    for (Rect r : p.second.gt){
-      rectangle(img, r, Scalar(0, 255, 0), 5);
-    }
-    imshow("page", img);
-    waitKey(0);
-    }*/
+  }
   return doc;
 }
 
@@ -71,6 +74,9 @@ list<Document> detectAll(set<string>& files){
 }
 
 int main(int argc, char** argv){
+  if (argc == 3){
+    TEST = true;
+  }
   set<string> files = files_in_folder(string(argv[1]), bind(isType, "png", placeholders::_1));
   list<Document> documents = detectAll(files);
   return 0;

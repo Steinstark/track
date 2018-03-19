@@ -97,7 +97,7 @@ list<Rect> findNRLT(Mat& text, Mat& nontext, list<Rect> tables){
     Rect expanded = expandKernel(kernel, tree, tbl);
     Mat regionText = localText(expanded);
     Mat regionNontext = nontext(expanded);
-    if (verifyReg(regionText, regionNontext))
+    if (verifyReg(regionText, regionNontext, 0))
       nrlTables.push_back(kernel);
   }
   return nrlTables;

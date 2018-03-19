@@ -33,10 +33,7 @@ list<Rect> findRLT(ImageDataBox& imd, ImageMeta& im)
   list<Rect> verified;
   for (auto it = candidates.begin(); it != candidates.end(); it++){
     Mat skewedText = text(it->r), skewedNontext = nontext(it->r), correctedText, correctedNontext;
-    //double angle = counterRotAngle(skewedText);
-    //    rotate(skewedText, correctedText, angle);
-    //    rotate(skewedNontext, correctedNontext, angle);
-    if (verifyReg(skewedText, skewedNontext)){
+    if (verifyReg(skewedText, skewedNontext, search_tree(im.nt_tree, it->r).size())){
       verified.push_back(it->r);
     }
   }

@@ -134,7 +134,15 @@ bool manyRows(Mat& img){
   return text.size() > 1;
 }
 
-bool verifyReg(Mat& text, Mat& nontext){
+bool hasLargeGraphElement(Rect r, vector<ComponentStats> statsNontext){
+  for (ComponentStats& cs : statsNontext){
+    if (cs.bb_area  >= 0.1*r.area())
+      return true;
+  }
+  return false;
+}
+
+bool verifyReg(Mat& text, Mat& nontext, int count){
   vector<ComponentStats> statsText = statistics(text);
   RT tree;
   Rect r(0,0, text.cols, text.rows);
@@ -150,5 +158,7 @@ bool verifyReg(Mat& text, Mat& nontext){
   mask = lineMask(nontext);
   bitwise_not(mask, withoutLines, nontext);
   vector<ComponentStats> statsNontext = statistics(withoutLines);
-  return verticalArrangement(tableCopy, tls) && mostlyText(statsNontext) && manyRows(text);  
+  vector<ComponentStats> statsComplete = statistics(nontext);
+  bool notInside = count == statsComplete.size();
+  return verticalArrangement(tableCopy, tls) && mostlyText(statsNontext) && manyRows(text) && !hasLargeGraphElement(r, statsNontext) && notInside;  
 }

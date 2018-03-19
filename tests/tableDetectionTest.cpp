@@ -59,11 +59,12 @@ list<Document> detectAll(set<string>& files){
   auto first = files.begin();
   list<Document> documents;
   double precision = 0, recall = 0;
+  cout << header() << endl;
   while (first != files.end()){
     auto last = files.upper_bound(boundName(*first));
     Document doc = detectDocument(first, last);
     Result result = doc.evaluate();
-    cout << "Finished processing: " << getBase(getName(*first)) << result << endl;
+    cout << getBase(getName(*first)) << "\t" << result << endl;
     documents.push_back(doc);
     precision += (result.precision() - precision)/documents.size();
     recall += (result.recall() - recall)/documents.size();
@@ -77,7 +78,14 @@ int main(int argc, char** argv){
   if (argc == 3){
     TEST = true;
   }
-  set<string> files = files_in_folder(string(argv[1]), bind(isType, "png", placeholders::_1));
+  string path(argv[1]);
+  string file = getFile(path);
+  set<string> files;    
+  if (isDir(path)){
+    files = files_in_folder(path, bind(isType, "png", placeholders::_1));
+  } else{
+    files = files_in_folder(getDir(path), [&file](string& s){return shareBase(file, s) && isType("png", s);});
+  }
   list<Document> documents = detectAll(files);
   return 0;
 }

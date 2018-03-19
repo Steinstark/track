@@ -16,15 +16,16 @@ namespace dataset{
     double precision();
     void update(bool pure, bool complete);
     friend std::ostream& operator<< (std::ostream& stream, const Result& result){
-      stream << " Correct: "
-	     << result.correct
-	     << " Incorrect: " << result.incorrect
-	     << " Pure: " << result.pure
-	     << " Complete " << result.complete
-      	     << " Count: " << result.countGT;
+      stream << result.correct << "\t"
+	     << result.incorrect << "\t"
+	     << result.pure << "\t"
+	     << result.complete << "\t"
+      	     << result.countGT;
       return stream;
     }
   };
+
+  std::string header();
   
   struct Page{
     cv::Size size;

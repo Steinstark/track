@@ -34,6 +34,11 @@ void dataset::Result::update(bool isPure, bool isComplete){
     incorrect++;
 }
 
+
+string dataset::header(){
+  return "Name\tCorrect\tIncorrect\tPure\tComplete\tCount";
+}
+
 Result dataset::Page::evaluate(){
   Result result(gt.size());
   RTBox tree;

@@ -26,8 +26,8 @@ void heuristic_filter(Mat& text, Mat& nontext){
     ComponentStats cs = components[i];
     if (cs.area < 6 ||
 	search_tree(tree, cs.r).size() > 5 ||
-	(cs.hwratio < 0.06 && cs.r.width > cs.r.height) ||      
-	cs.density < 0.06){
+	(cs.hwratio < 0.15 && cs.r.width > cs.r.height) ||      
+	cs.density < 0.15){
       move2(text, nontext, cc, i);
     }
   }  

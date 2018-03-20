@@ -36,7 +36,7 @@ void dataset::Result::update(bool isPure, bool isComplete){
 
 
 string dataset::header(){
-  return "Name\tCorrect\tIncorrect\tPure\tComplete\tCount";
+  return "Name\tCorrect\tIncorr\tPure\tComp\tCount";
 }
 
 Result dataset::Page::evaluate(){
@@ -64,14 +64,14 @@ double dataset::Result::precision(){
   if (correct + incorrect == 0){
     return 1;
   }
-  return correct/(correct + incorrect);
+  return (double)correct/(correct + incorrect);
 }
 
 double dataset::Result::recall(){
   if (countGT == 0){
     return 1;
   }
-  return correct/countGT;
+  return (double)correct/countGT;
 }
 
 void dataset::Document::insert(int pageNumber, Page p){

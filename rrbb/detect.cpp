@@ -20,5 +20,5 @@ list<Rect> detect(Mat& text, Mat& nontext){
   ImageDataBox imd(text, nontext);
   ImageMeta im(text.cols, text.rows, imd.textData, imd.nontextData);
   list<Rect> nrlTables = findNRLT(text, nontext, im);
-  return merged;
+  return nrlTables;
 }

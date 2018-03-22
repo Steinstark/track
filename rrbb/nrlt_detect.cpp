@@ -15,9 +15,32 @@ using namespace std;
 using namespace cv;
 using namespace tree;
 
-list<Rect> findKernels(Mat& localText, RT& tree, vector<TextLine>& tls){
-  list<Rect> regions = homogenous_recursive(localText);
-  
+//DEBUG
+Mat textDebug;
+Mat lineDebug;
+Mat expandedDebug;
+
+void expandLine(Mat& unexpanded){
+  vector<ComponentStats> stats = statistics(unexpanded);
+  if (stats.empty())
+    return;
+  sort(stats.begin(),
+       stats.end(),
+       [](const ComponentStats& a, const ComponentStats& b){return a.r.y < b.r.y;});
+  Rect box;
+  for (ComponentStats cs : stats){
+    if (cs.r.y <= box.br().y){
+      box |= cs.r;
+    }else{
+      unexpanded(box) = Scalar(255);
+      box = cs.r;
+    } 
+  }
+  unexpanded(box) = Scalar(255);
+}
+
+list<Rect> findKernels(Mat& localText){
+  list<Rect> regions = homogenous_recursive(localText);  
   Mat mask(localText.size(), CV_8UC1, Scalar(0));
   for (Rect& r : regions){
     rectangle(mask, r, Scalar(255));
@@ -25,62 +48,89 @@ list<Rect> findKernels(Mat& localText, RT& tree, vector<TextLine>& tls){
   Mat overlay = mask + localText;
   list<Rect> kernels;
   for (Rect region : regions){
-    vector<int> hits = search_tree(tree, region);
-    vector<TextLine> localLines;
-    Rect kernel;
-    for (int i = 0; i < hits.size(); i++){
-      localLines.push_back(tls[hits[i]]);
-      kernel |= tls[hits[i]].getBox();
-    }
-    Mat localMat = localText(kernel);
-    if (hits.size() > 1 && verticalArrangement(localMat, localLines)){
-      
-      kernels.push_back(kernel);
+    Mat localRegion = localText(region);
+    if (verticalArrangement(localRegion)){      
+      kernels.push_back(region);
     }
   }
   return kernels;
 }
 
-bool criteria9(int nhtl, int nvtl, int wc, int w){
-  return (nhtl >= 1 && nvtl == 1 && wc <= 2*w/3) ||
-    (nhtl >= 1 && nvtl <= 2 && abs(wc-w) <= 0.05*w);
+int distance(const Rect& a, const Rect& b){
+  int dist1 = abs(a.y-b.br().y);
+  int dist2 = abs(a.br().y-b.y);
+  if (dist1 == dist2 || a.width == 0 || b.width == 0)
+    return 0;
+  return min(dist1, dist2);
 }
 
+template <typename Iterator>
+Rect expand(const Mat& textImg, Iterator begin, Iterator end){  
+  Mat hist(Size(textImg.cols, 1), CV_64F, Scalar(0));
+  int cols = 0, headerCount = 0, dataCount = 0;
+  Rect r;
+  int boxHeight = begin->height;;
+  while (begin != end){
+    Rect line = *begin++;
 
+    //DEBUG
+    Mat debug1 = textDebug(line);
+    Mat debug2 = lineDebug(line);
+    Mat debug3 = expandedDebug(line);
 
-Rect process(vector<int> index, vector<Rect> bb, Rect kernel){
-  int nhtl = 0, nvtl = 0;
-  Rect last = kernel;
-  for (Rect& r : bb){
-    if (max(r.y, last.y) - min(r.br().y, last.br().y) < 0) nhtl++;
-    else nvtl++;
-    if (!criteria9(nhtl, nvtl, r.width, kernel.width))
-      break;
-    last = r;
+    Mat histRow, histComplete;
+    reduce(textImg(line), histRow, 0, CV_REDUCE_SUM, CV_64F);
+    histComplete = hist;
+    histComplete(Rect(line.x, 0, line.width, 1)) += histRow;
+    list<Line> text, space;
+    find_lines(histComplete, text, space);
+    int dist = distance(r, line);        
+    if (text.size() < cols || text.size() == 1){
+      headerCount++;
+      if (headerCount - dataCount > 1 || dist > 0.8*boxHeight){
+	return r;
+      }
+    }else if (dist < 0.8*boxHeight){
+      dataCount++;
+      hist = histComplete;
+      cols = text.size();
+    }else{
+      return r;
+    }
+    r |= line;
+    boxHeight = line.height;
   }
-  return last;
+  return r;
 }
 
-Rect expandKernel(Rect& kernel, RT& tree, vector<Rect>& tbl){
-  const int inf = 1000000;
-  Rect boxAbove(kernel.x, 0, kernel.width, kernel.y-1);
-  Rect boxBelow(kernel.x, kernel.br().y+1, kernel.width, inf);
-  vector<int> above = search_tree(tree, boxAbove);
-  vector<int> below = search_tree(tree, boxBelow);
-  sort(above.begin(), above.end(), [&tbl](int a, int b){return tbl[a].br().y > tbl[b].br().y;});  
-  sort(below.begin(), below.end(), [&tbl](int a, int b){return tbl[a].y < tbl[b].y;});
-  Rect a = process(above, tbl, kernel);
-  Rect b = process(below, tbl, kernel);
-  return a|b;  
+//TODO
+//add header expansion
+list<Rect> expandKernels(const Mat& text, const Mat& expandedLine, const list<Rect>& kernels){
+  auto belowComp = [](const Rect& a, const Rect& b){return a.y < b.y;};
+  set<Rect, decltype(belowComp)> all(belowComp);        
+  boundingVector(expandedLine, inserter(all, all.begin()));
+  list<Rect> expandedKernels;
+  for (Rect kernel : kernels){
+    set<Rect>::iterator it = all.lower_bound(kernel);
+    set<Rect>::reverse_iterator itr(it);    
+    Rect r1 = expand(text, itr, all.rend());
+    Rect r2 = expand(text, it, all.end());
+    if (r1 != r2){
+      if (distance(r1, r2) < 0.8*it->height)
+	expandedKernels.push_back(r1 | r2);
+      else{
+	expandedKernels.push_back(r1);
+	expandedKernels.push_back(r2);
+      }
+    }
+  }
+  return expandedKernels;
 }
 
-list<Rect> findNRLT(Mat& text, Mat& nontext, list<Rect> tables){
+list<Rect> findNRLT(Mat& text, Mat& nontext, ImageMeta& im){
   Mat localText = text.clone();
-  for (Rect& table : tables){
-    Mat roi = localText(table);
-    roi.setTo(0);
-  }
-  vector<Rect> bb = boundingVector(localText);  
+  vector<Rect> bb;
+  boundingVector(localText, back_inserter(bb));  
   vector<TextLine> tls = findLines(bb);
   vector<Rect> tbl;
   RT tree;
@@ -89,16 +139,24 @@ list<Rect> findNRLT(Mat& text, Mat& nontext, list<Rect> tables){
     insert2tree(tree, r, i);
     tbl.push_back(r);
     rectangle(localText, r, Scalar(255), CV_FILLED);
-  }  
-  list<Rect> kernels = findKernels(text, tree, tls);
-  list<Rect> nrlTables;
-  for (Rect& kernel : kernels){    
-    Mat debugKernel = text(kernel);    
-    Rect expanded = expandKernel(kernel, tree, tbl);
+  }
+  Mat expandedLine = localText.clone();
+  expandLine(expandedLine);
+
+  //DEBUG
+  expandedDebug = expandedLine;
+  textDebug = text;
+  lineDebug = localText;
+  
+  list<Rect> kernels = findKernels(localText);
+  list<Rect> expandedKernels = expandKernels(localText, expandedLine, kernels);
+  list<Rect> nrlTables;  
+  for (Rect& expanded : expandedKernels){    
     Mat regionText = localText(expanded);
     Mat regionNontext = nontext(expanded);
-    if (verifyReg(regionText, regionNontext, 0))
-      nrlTables.push_back(kernel);
+    if (verifyReg(regionText, regionNontext, search_tree(im.nt_tree, expanded).size())){
+      nrlTables.push_back(expanded);
+    }
   }
   return nrlTables;
 }

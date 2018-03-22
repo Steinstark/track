@@ -9,14 +9,17 @@ using namespace std;
 using namespace cv;
 using namespace tree;
 
-Rect TextLine::getBox() const{
-  if (elements.empty())
-    return Rect();
-  Rect r = elements[0];
-  for (int i = 1; i < elements.size(); i++){
-      r |= elements[i];
+template <typename InputIterator>
+TextLine::TextLine(InputIterator first, InputIterator last, const vector<Rect>& rects){  
+  while (first != last){
+    int index = *first++;
+    box |= rects[index];
+    elements.push_back(rects[index]);    
   }
-  return r;
+}
+
+Rect TextLine::getBox() const{
+  return box;
 }
 
 double TextLine::getSpace(){
@@ -36,9 +39,8 @@ set<int> indexOnLine(Rect r, vector<Rect>& rects, vector<int>& interesting){
   set<int> lines;
   for (int e : interesting){
     Rect c = rects[e];
-    if (max(r.y, c.y) - min(r.br().y, c.br().y) < 0 &&
-	c.x - r.br().x <= max(r.height, c.height) &&
-	max(r.height, c.height) <= 2*min(r.height, c.height)){
+    if (c.x - r.br().x <= max(r.height, c.height) &&
+	max(r.height, c.height) <= 3*min(r.height, c.height)){
       lines.insert(e);
     }
   }  
@@ -56,31 +58,27 @@ vector<TextLine> findLines(vector<Rect>& rects){
   while (toVisit.size()){
     set<int> line;
     int cl = *toVisit.begin();
+    Rect r = rects[cl];
     while(true){
-      Rect r = rects[cl];
-      Rect possible(r.x, r.y, r.width + r.height/2, r.height);
+      Rect possible(r.x, r.y, r.width + r.height, r.height);
       vector<int> interesting = search_tree(tree, possible);
       set<int> overlapping = indexOnLine(r, rects, interesting);
       for (int o : overlapping){
 	line.insert(o);
 	toVisit.erase(o);
+	r |= rects[o];
       }
       int nf = *line.rbegin();
       if (cl == nf)
 	break;
       cl = nf;
     }
-    TextLine tl;
-    for (int e : line){
-      tl.elements.push_back(rects[e]);
-    }
-    textVector.push_back(tl);
+    textVector.push_back(TextLine(line.begin(), line.end(), rects));
   }
   return textVector;
 }
 
-
-vector<TextLine> linesInRegion(RT& tree, vector<ComponentStats> textData, Rect region){
+vector<TextLine> linesInRegion(RT& tree, vector<ComponentStats>& textData, Rect region){
   vector<int> inside = search_tree(tree, region);
   vector<Rect> rects;
   for (int i = 0; i < inside.size(); i++){

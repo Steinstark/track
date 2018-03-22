@@ -4,6 +4,7 @@
 #include <vector>
 #include <functional>
 #include <type_traits>
+#include <set>
 #include "util.hpp"
 #include "tree_helper.hpp"
 
@@ -44,7 +45,7 @@ bool manySmallRect(Mat& text, ComponentStats& cs){
   return (area+cs.bb_area-cs.area)/(double)cs.bb_area >= 0.9;
 }
 
-vector<vector<TextLine> > partitionBlocks(vector<TextLine>& tls, vector<Line>& space){
+vector<vector<TextLine> > partitionBlocks(vector<TextLine>& lineBoxes, vector<Line>& space){
   int inf = 1000000;
   map<int, int> table;
   for (int i = 0; i < space.size(); i++){
@@ -52,11 +53,10 @@ vector<vector<TextLine> > partitionBlocks(vector<TextLine>& tls, vector<Line>& s
   }
   table[inf] = space.size();
   vector<vector<TextLine> > partitions(space.size()+1, vector<TextLine>());
-  for (int i = 0; i < tls.size(); i++){
-    Rect r = tls[i].getBox();
-    auto it = table.upper_bound(r.x-1);
+  for (TextLine& line : lineBoxes){
+    auto it = table.upper_bound(line.getBox().x-1);
     if (it != table.end()){
-      partitions[it->second].push_back(tls[i]);
+      partitions[it->second].push_back(line);
     }else
       cout << "Left index is larger than " << inf << endl;
   }
@@ -85,6 +85,14 @@ vector<Rect> verticalMerge(vector<TextLine>& lines){
   return merged;
 }
 
+bool verticalArrangement(Mat& textTable){
+  vector<ComponentStats> stats = statistics(textTable);
+  vector<Rect> lines;
+  for (ComponentStats cs : stats)
+    lines.push_back(cs.r);
+  vector<TextLine> tls = findLines(lines);
+  return verticalArrangement(textTable, tls);
+}
 
 bool verticalArrangement(Mat& textTable, vector<TextLine>& lines){
   Mat hist;
@@ -142,6 +150,47 @@ bool hasLargeGraphElement(Rect r, vector<ComponentStats> statsNontext){
   return false;
 }
 
+bool similarRowHeight(Mat& textTable){
+  const int inf = 1000000;
+  vector<ComponentStats> statsTable = statistics(textTable);
+  set<int> toVisit, yvals;  
+  RT tree;
+  for (int i = 0; i < statsTable.size(); i++){
+    insert2tree(tree, statsTable[i].r , i);
+    toVisit.insert(i);
+    yvals.insert(statsTable[i].r.y);
+    yvals.insert(statsTable[i].r.br().y);
+  }
+  while (toVisit.size()){
+    int c = *toVisit.begin();
+    Rect& r = statsTable[c].r;
+    vector<int> onLine = search_tree(tree, Rect(0, r.y, inf, r.br().y));
+    int ymax = r.br().y, ymin  = r.y;
+    for (int e : onLine){
+      toVisit.erase(e);
+      Rect& re = statsTable[e].r;
+      if (ymax < re.br().y)
+	ymax = re.br().y;
+      if (ymin > re.y)
+	ymin = re.y;
+    }
+    set<int>::iterator below = yvals.lower_bound(ymax+1);
+    set<int>::iterator above = yvals.upper_bound(ymin-1);
+    if (below != yvals.end()){
+      int mid = (*below + ymax)/2;
+      if (search_tree(tree, Rect(0, mid, inf, 1)).size())
+	return false;
+    }
+    if (above != yvals.begin()){
+      above--;
+      int mid = (*above + ymin)/2;
+      if (search_tree(tree, Rect(0, mid, inf, 1)).size())
+	return false;
+    }
+  }
+  return true;
+}
+
 bool verifyReg(Mat& text, Mat& nontext, int count){
   vector<ComponentStats> statsText = statistics(text);
   RT tree;
@@ -149,16 +198,17 @@ bool verifyReg(Mat& text, Mat& nontext, int count){
   for (int i = 0; i < statsText.size(); i++)
     insert2tree(tree, statsText[i].r, i); 
   vector<TextLine> tls = linesInRegion(tree, statsText, r);
-  Mat tableCopy = text.clone();
-  for (int i = 0; i < tls.size(); i++){
-    Rect r = tls[i].getBox();
-    rectangle(tableCopy, r, Scalar(255), CV_FILLED);
-  }
   Mat mask, withoutLines;
   mask = lineMask(nontext);
   bitwise_not(mask, withoutLines, nontext);
   vector<ComponentStats> statsNontext = statistics(withoutLines);
   vector<ComponentStats> statsComplete = statistics(nontext);
   bool notInside = count == statsComplete.size();
-  return verticalArrangement(tableCopy, tls) && mostlyText(statsNontext) && manyRows(text) && !hasLargeGraphElement(r, statsNontext) && notInside;  
+  bool similar = similarRowHeight(text);
+  bool isTable=  verticalArrangement(text, tls) &&
+    mostlyText(statsNontext) &&
+    manyRows(text) &&
+    !hasLargeGraphElement(r, statsNontext) &&
+    notInside;
+  return isTable;
 }

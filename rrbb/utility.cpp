@@ -30,16 +30,6 @@ ComponentStats stats2component(const Mat& stats, int statsIndex, int compIndex){
   return ComponentStats(r, area, compIndex);
 }
 
-vector<Rect> boundingVector(Mat& img){
-  Mat cc, stats, centroids;
-  int labels = connectedComponentsWithStats(img, cc, stats, centroids, 8, CV_32S);
-  vector<Rect> bb;
-  for (int i = 1; i < labels; i++){
-    bb.push_back(stats2rect(stats, i)); 
-  }
-  return bb;
-}
-
 vector<ComponentStats> statistics(Mat& img){
   Mat cc, stats, centroids;
   int labels = connectedComponentsWithStats(img, cc, stats, centroids, 8, CV_32S);
@@ -62,25 +52,6 @@ ImageDataBox::ImageDataBox(Mat& text, Mat& nontext): text(text), nontext(nontext
   nontextData = statistics(nontext);
 }
 
-void find_lines(const Mat& hist, vector<Line>& text, vector<Line>& space){
-  int length = max(hist.rows, hist.cols);
-  int t = 0;
-  for (int i = 1; i < length; i++){
-    if (!hist.at<double>(i-1) && hist.at<double>(i)){
-      t = i;
-    }
-    else if (hist.at<double>(i-1) && !hist.at<double>(i)){
-      text.push_back(Line(t,i));
-      t = -1;
-    }
-  }
-  if (t != -1)
-    text.push_back(Line(t,length));
-  for (int i = 1; i < text.size(); i++){
-    space.push_back(Line(text[i-1].r, text[i].l));
-  }
-}
-
 void find_all_lines(const Mat& hist, vector<Line>& text, vector<Line>& space){
   find_lines(hist, text, space);
   Line a = text.front();
@@ -92,3 +63,25 @@ void find_all_lines(const Mat& hist, vector<Line>& text, vector<Line>& space){
     space.push_back(Line(b.r, length-1));      
 }
 
+list<Rect> mergeIntersecting(list<Rect>& tables){
+  list<Rect> merged;
+  RTBox tree;
+  for (Rect& table : tables){
+    insert2tree(tree, table);
+  }
+  while (tree.size()){
+    auto it = tree_begin(tree);
+    Rect r = bb2cvr(*it);
+    while (true){
+      list<Rect> intersects = search_tree(tree, r);
+      if (intersects.empty())
+	break;
+      for (Rect& intersect: intersects){
+	r |= intersect;
+	remove_tree(tree, intersect);
+      }
+    }
+    merged.push_back(r);
+  }
+  return merged;
+}

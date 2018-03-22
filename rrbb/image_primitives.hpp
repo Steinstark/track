@@ -12,6 +12,7 @@ bool isColorBlock(ImageMeta& im, const ComponentStats& cs);
 bool containsManyElements(tree::RT& tree, const ComponentStats& cs);
 
 bool hasLowDensity(ComponentStats& cs);
+bool verticalArrangement(cv::Mat& textTable);
 bool verticalArrangement(cv::Mat& textTable, std::vector<TextLine>& lines);
 bool manySmallRect(cv::Mat& text, ComponentStats& cs);
 bool noCut(ImageMeta& im, std::vector<ComponentStats>& textData, cv::Rect r);

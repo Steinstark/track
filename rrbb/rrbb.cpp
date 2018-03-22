@@ -19,6 +19,6 @@ list<Rect> detect_tables(Mat& text){
   heuristic_filter(text, nontext);
   //  multi_level_analysis(text, nontext);
   //  multi_level_classification(text, nontext);
-  //remove_noise(text, nontext);
+  // remove_noise(text, nontext);
   return detect(text, nontext);
 }

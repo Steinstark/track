@@ -65,11 +65,13 @@ int distance(const Rect& a, const Rect& b){
 }
 
 template <typename Iterator>
-Rect expand(const Mat& textImg, Iterator begin, Iterator end){  
+Rect expand(const Mat& textImg, Iterator begin, Iterator end){
   Mat hist(Size(textImg.cols, 1), CV_64F, Scalar(0));
   int cols = 0, headerCount = 0, dataCount = 0;
   Rect r;
-  int boxHeight = begin->height;;
+  if (begin == end)
+    return r;
+  int boxHeight = begin->height;
   while (begin != end){
     Rect line = *begin++;
 
@@ -80,7 +82,7 @@ Rect expand(const Mat& textImg, Iterator begin, Iterator end){
 
     Mat histRow, histComplete;
     reduce(textImg(line), histRow, 0, CV_REDUCE_SUM, CV_64F);
-    histComplete = hist;
+    histComplete = hist.clone();
     histComplete(Rect(line.x, 0, line.width, 1)) += histRow;
     list<Line> text, space;
     find_lines(histComplete, text, space);
@@ -115,13 +117,16 @@ list<Rect> expandKernels(const Mat& text, const Mat& expandedLine, const list<Re
     set<Rect>::reverse_iterator itr(it);    
     Rect r1 = expand(text, itr, all.rend());
     Rect r2 = expand(text, it, all.end());
+    Rect r = r1 | r2;
     if (r1 != r2){
-      if (distance(r1, r2) < 0.8*it->height)
-	expandedKernels.push_back(r1 | r2);
+      if (distance(r1, r2) < 0.8*it->height){
+	expandedKernels.push_back(r);
+      }
       else{
 	expandedKernels.push_back(r1);
 	expandedKernels.push_back(r2);
       }
+      all.erase(all.lower_bound(r), all.upper_bound(Rect(0, r.br().y, 1, 1)));
     }
   }
   return expandedKernels;

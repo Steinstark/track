@@ -150,45 +150,9 @@ bool hasLargeGraphElement(Rect r, vector<ComponentStats> statsNontext){
   return false;
 }
 
-bool similarRowHeight(Mat& textTable){
-  const int inf = 1000000;
-  vector<ComponentStats> statsTable = statistics(textTable);
-  set<int> toVisit, yvals;  
-  RT tree;
-  for (int i = 0; i < statsTable.size(); i++){
-    insert2tree(tree, statsTable[i].r , i);
-    toVisit.insert(i);
-    yvals.insert(statsTable[i].r.y);
-    yvals.insert(statsTable[i].r.br().y);
-  }
-  while (toVisit.size()){
-    int c = *toVisit.begin();
-    Rect& r = statsTable[c].r;
-    vector<int> onLine = search_tree(tree, Rect(0, r.y, inf, r.br().y));
-    int ymax = r.br().y, ymin  = r.y;
-    for (int e : onLine){
-      toVisit.erase(e);
-      Rect& re = statsTable[e].r;
-      if (ymax < re.br().y)
-	ymax = re.br().y;
-      if (ymin > re.y)
-	ymin = re.y;
-    }
-    set<int>::iterator below = yvals.lower_bound(ymax+1);
-    set<int>::iterator above = yvals.upper_bound(ymin-1);
-    if (below != yvals.end()){
-      int mid = (*below + ymax)/2;
-      if (search_tree(tree, Rect(0, mid, inf, 1)).size())
-	return false;
-    }
-    if (above != yvals.begin()){
-      above--;
-      int mid = (*above + ymin)/2;
-      if (search_tree(tree, Rect(0, mid, inf, 1)).size())
-	return false;
-    }
-  }
-  return true;
+bool similarElementHeight(const vector<ComponentStats>& stats){
+  double var = welford<ComponentStats, int>(stats, [](const ComponentStats& cs){return cs.r.height;});
+  return var < 10;
 }
 
 bool verifyReg(Mat& text, Mat& nontext, int count){
@@ -204,11 +168,11 @@ bool verifyReg(Mat& text, Mat& nontext, int count){
   vector<ComponentStats> statsNontext = statistics(withoutLines);
   vector<ComponentStats> statsComplete = statistics(nontext);
   bool notInside = count == statsComplete.size();
-  bool similar = similarRowHeight(text);
   bool isTable=  verticalArrangement(text, tls) &&
     mostlyText(statsNontext) &&
     manyRows(text) &&
     !hasLargeGraphElement(r, statsNontext) &&
-    notInside;
+    notInside &&
+    similarElementHeight(statsText);  
   return isTable;
 }

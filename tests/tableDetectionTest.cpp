@@ -45,7 +45,7 @@ Document detectDocument(set<string>::iterator first, set<string>::iterator last)
 	rectangle(img, r, Scalar(255, 0, 0), 5);      
       }
       for (Rect r : p.second.gt){
-	rectangle(img, r, Scalar(0, 255, 0), 5);
+	rectangle(img, r, Scalar(0, 255, 0), 3);
       }
       imshow("page", img);
       waitKey(0);

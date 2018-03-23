@@ -41,11 +41,14 @@ void expandLine(Mat& unexpanded){
 
 list<Rect> findKernels(Mat& localText){
   list<Rect> regions = homogenous_recursive(localText);  
+
+  //DEBUG
   Mat mask(localText.size(), CV_8UC1, Scalar(0));
   for (Rect& r : regions){
     rectangle(mask, r, Scalar(255));
   }
   Mat overlay = mask + localText;
+  
   list<Rect> kernels;
   for (Rect region : regions){
     Mat localRegion = localText(region);
@@ -89,20 +92,22 @@ Rect expand(const Mat& textImg, Iterator begin, Iterator end){
     int dist = distance(r, line);        
     if (text.size() < cols || text.size() == 1){
       headerCount++;
-      if (headerCount - dataCount > 1 || dist > 0.8*boxHeight){
-	return r;
+      if (headerCount - dataCount > 1 || dist > boxHeight){
+	break;
       }
-    }else if (dist < 0.8*boxHeight){
+    }else if ((cols == cols && dist <= 4*boxHeight) || dist < boxHeight){
       dataCount++;
       hist = histComplete;
       cols = text.size();
     }else{
-      return r;
+      break;
     }
     r |= line;
     boxHeight = line.height;
   }
-  return r;
+  if (dataCount)
+    return r;
+  return Rect();
 }
 
 //TODO
@@ -113,7 +118,9 @@ list<Rect> expandKernels(const Mat& text, const Mat& expandedLine, const list<Re
   boundingVector(expandedLine, inserter(all, all.begin()));
   list<Rect> expandedKernels;
   for (Rect kernel : kernels){
-    set<Rect>::iterator it = all.lower_bound(kernel);
+    int mid = (kernel.y + kernel.br().y)/2;
+    Rect midKernel(0, mid, 1, 1);
+    set<Rect>::iterator it = all.lower_bound(midKernel);
     set<Rect>::reverse_iterator itr(it);    
     Rect r1 = expand(text, itr, all.rend());
     Rect r2 = expand(text, it, all.end());

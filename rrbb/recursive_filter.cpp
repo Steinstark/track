@@ -45,7 +45,6 @@ vector<double> k_calc(const vector<double>& means, const vector<double>& medians
   return k;
 }
 
-//TODO
 //Technically not median for even length, but doesnt really matter
 vector<double> getMedians(NodeDB& nodes){
   vector<double> median(3,0);
@@ -66,8 +65,6 @@ vector<double> getMedians(NodeDB& nodes){
   return median;
 }
 
-//TODO
-//implement mean for a NodeDB
 vector<double> getMeans(NodeDB& nodes){
   auto& iv = nodes.get<3>();
   vector<double> mean(3,0);
@@ -90,7 +87,6 @@ struct DataBox{
   }
 };
 
-//
 bool classify(int minSpace, int medws, int meanws){
   return minSpace > max(medws, meanws) &&  minSpace > 2*meanws;
 }
@@ -107,6 +103,8 @@ vector<int> distances(RT& tree, Rect& r){
   return dist;
 }
 
+//TODO
+//implement classifyAll
 void classifyAll(NodeDB& nodes, list<int>& suspects){
   RT tree;
   for (auto it = nodes.begin(); it != nodes.end(); it++){

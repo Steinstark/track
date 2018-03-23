@@ -26,7 +26,7 @@ typename std::enable_if<std::is_arithmetic<T>::value, double>::type variance(std
 }
 
 template <typename V, typename T>
-typename std::enable_if<std::is_arithmetic<T>::value, double>::type welford(std::vector<V>& v, std::function<T(V)> f){
+typename std::enable_if<std::is_arithmetic<T>::value, double>::type welford(const std::vector<V>& v, std::function<T(V)> f){
   if (v.size() < 2)
     return 0;
   double mean = 0, m2 = 0;

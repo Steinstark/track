@@ -39,8 +39,7 @@ set<int> indexOnLine(Rect r, vector<Rect>& rects, vector<int>& interesting){
   set<int> lines;
   for (int e : interesting){
     Rect c = rects[e];
-    if (c.x - r.br().x <= max(r.height, c.height) &&
-	max(r.height, c.height) <= 3*min(r.height, c.height)){
+    if (c.x - r.br().x <= max(r.height, c.height)){
       lines.insert(e);
     }
   }  

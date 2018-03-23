@@ -26,14 +26,11 @@ int splitIndex(vector<Line> lines){
 bool isExtreme(double a, double b){
   return (a < 0 && b >= 0) || (a >= 0 && b < 0);
 }
-
 	  
 double similarity(const Mat& hist){
   int s = 10;
   Mat blurred, sob;
   blur(hist, blurred, Size(1,s), Point(-1,-1), BORDER_CONSTANT);
-  
-  //Scharr(blurred, sob, -1, 0, 1);
   vector<Line> text, space;
   vector<int> a0, a1;
   find_lines(blurred, text, space);
@@ -129,10 +126,5 @@ list<Rect> homogenous_regions(const Mat& img){
       regions.push_back(pos2rect(col.first, row.first, col.second, row.second));
     }
   }  
-  Mat mask(img.size(), CV_8UC1, Scalar(0));
-  for (Rect& region : regions){
-    rectangle(mask, region, Scalar(255));
-  }
-  Mat overlay = img+mask;
   return regions;
 }

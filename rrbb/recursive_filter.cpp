@@ -12,7 +12,10 @@
 #include "tree_helper.hpp"
 #include "recursive_filter.hpp"
 #include "utility.hpp"
+#include "util.hpp"
 #include "image_util.hpp"
+
+#include "debug_header.hpp"
 
 using namespace std;
 using namespace cv;
@@ -82,42 +85,62 @@ vector<double> getMeans(NodeDB& nodes){
 
 struct DataBox{
   vector<double> means, medians, k;
-  DataBox(NodeDB nodes): means(getMeans(nodes)), medians(getMedians(nodes)){
+  DataBox(NodeDB& nodes): means(getMeans(nodes)), medians(getMedians(nodes)){
     k = k_calc(means, medians);
   }
 };
 
-bool classify(int minSpace, int medws, int meanws){
-  return minSpace > max(medws, meanws) &&  minSpace > 2*meanws;
+bool classify(int minSpace, double medws, double meanws){
+  return minSpace > max(medws, meanws) &&  minSpace > 3*meanws;
 }
 
-vector<int> distances(RT& tree, Rect& r){
+int minDist(RT& tree, const Rect& r){
   int inf = 1000000;
-  vector<Rect> left = closestBox(tree, r.tl(), Rect(0,r.y, r.x, r.width));
-  vector<Rect> right = closestBox(tree, r.br(), Rect(r.br().x, r.y, inf, r.width));
+  vector<Rect> left = closestBox(tree, r.tl(), Rect(0,r.y, r.x-1, r.height));
+  vector<Rect> right = closestBox(tree, r.br(), Rect(r.br().x+1, r.y, inf, r.height));
   vector<int> dist;
   if (left.size())
-    dist.push_back(r.x - left[0].br().x);
+    dist.push_back(min(abs(r.x - left[0].br().x)+1, abs(left[0].x-r.br().x)+1));
   if (right.size())
-    dist.push_back(right[0].x - r.br().x);
-  return dist;
+    dist.push_back(min(abs(right[0].x - r.br().x) + 1, abs(r.x-right[0].br().x)+1));
+  if (dist.empty())
+    return 0;
+  int closest = inf;
+
+  //DEBUG
+  Mat region = textDebug(r);
+  
+  for (int e : dist){    
+    if (e < closest){
+      closest = e;
+    }
+  }
+  return closest;
 }
 
-//TODO
-//implement classifyAll
 void classifyAll(NodeDB& nodes, list<int>& suspects){
   RT tree;
   for (auto it = nodes.begin(); it != nodes.end(); it++){
     insert2tree(tree, it->r, it->index);
   }
-  vector<int> minSpaces;
-  minSpaces.reserve(nodes.size());
+  vector<int> distances;
   for (auto it = nodes.begin(); it != nodes.end(); it++){
-    
+    int dist = minDist(tree, it->r);
+    if (dist){
+      distances.push_back(dist);
+    }      
   }
-  for (auto it = suspects.begin(); it != suspects.end(); it++){
-    if (classify(0,0,0)){
+  double medWS = binapprox(distances);  
+  double meanWS = mean<int, int>(distances, [](int v){return v;});    
+  for (auto it = suspects.begin(); it != suspects.end();){
+    Rect r = nodes.get<3>().find(*it)->r;
+    int dist = minDist(tree, r);
+    if (!classify(dist, medWS, meanWS)){
       it = suspects.erase(it);
+    }else{
+      //DEBUG
+      Mat regionDebug = textDebug(r);
+      it++;
     }
   }
 }
@@ -144,15 +167,17 @@ void maximum_median_filter(NodeDB& nodes, DataBox& box, list<int>& suspects){
 void minimum_median_filter(NodeDB& nodes, DataBox& box, list<int>& suspects){
   auto& as = nodes.get<0>();
   auto& ws = nodes.get<1>();
-  auto& hs = nodes.get<2>();  
-  while (nodes.size()){
-    auto ai = as.rbegin();
+  auto& hs = nodes.get<2>();
+  auto ai = as.rbegin();
+  while (ai != as.rend()){
     AreaNode extreme(ai->a, ws.rbegin()->w, hs.rbegin()->h, 0, Rect());
     if (!median_filter(*ai, extreme, [&box](int l, int i){return l < box.medians[i]/box.k[i];})){
       break;
     }
     suspects.push_back(ai->index);
-    as.erase(ai.base());
+    auto tmp1 = ai.base();
+    auto tmp2 = --tmp1;
+    ai = NodeDB::reverse_iterator{nodes.erase(tmp2)};
   }
 }
 
@@ -162,18 +187,33 @@ list<int> nontextElements(NodeDB& nodes){
   NodeDB local = nodes;
   minimum_median_filter(local, box, suspects);
   maximum_median_filter(local, box, suspects);
+
+  //DEBUG
+  /*for (int e : suspects){
+    Mat susp = textDebug(nodes.get<3>().find(e)->r);
+    int a = 0;			 
+    }*/
+  
   classifyAll(nodes, suspects);
   return suspects;
 }
 
 bool recursive_filter(Mat& text, Mat& nontext){
-  RT tree;
   NodeDB nodes;
-  Mat cc;
-  vector<ComponentStats> stats = statistics(text);
+  Mat cc, stats, centroids;
+
+  //DEBUG
+  textDebug = text;
+  nontextDebug = nontext;
+  
+  int labels = connectedComponentsWithStats(text, cc, stats, centroids, 8, CV_32S);
+  for (int i = 1; i < labels; i++){
+    Rect r = stats2rect(stats, i);
+    nodes.insert(AreaNode(r.area(), r.width, r.height, i, r));
+  }
   list<int> toRemove = nontextElements(nodes);
   for (int e : toRemove){
     move2(text, nontext, cc, e);
   }
-  return toRemove.size() > 0 && toRemove.size() != stats.size();
+  return toRemove.size() > 0 && toRemove.size() != stats.rows-1;
 }

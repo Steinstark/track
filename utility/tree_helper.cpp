@@ -48,6 +48,7 @@ std::vector<cv::Rect> tree::closestBox(RT& tree, const cv::Point cvp, const cv::
   tree.query(bgi::nearest(p, 1) && bgi::intersects(b), std::back_inserter(boxes));
   std::vector<cv::Rect> rects;
   std::transform(boxes.begin(), boxes.end(), std::back_inserter(rects),[](value v){return bb2cvr(v.first);});
+  return rects;
 }
 
 std::list<cv::Rect> tree::search_tree(RTBox& tree, const cv::Rect& r){

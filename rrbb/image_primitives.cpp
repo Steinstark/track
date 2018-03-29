@@ -110,7 +110,7 @@ bool verticalArrangement(Mat& textTable, vector<TextLine>& lines){
     double lv = welford<Rect, int>(merged, [](Rect r){return r.x;});
     double cv = welford<Rect, double>(merged, [](Rect r){return (r.x+r.br().x)*0.5;});
     double rv = welford<Rect, int>(merged, [](Rect r){return r.br().x;});
-    if (lv >= met && cv >= met && rv >= met || ms <= mes)
+    if (lv >= met && cv >= met && rv >= met || ms <= mes || partitions[i].size() < 2)
       return false;    
   }
   return true;
@@ -172,7 +172,6 @@ bool verifyReg(Mat& text, Mat& nontext, int count){
     mostlyText(statsNontext) &&
     manyRows(text) &&
     !hasLargeGraphElement(r, statsNontext) &&
-    notInside &&
-    similarElementHeight(statsText);  
+    notInside;
   return isTable;
 }

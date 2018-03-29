@@ -11,14 +11,11 @@
 #include "nrlt_detect.hpp"
 #include "tree_helper.hpp"
 
+#include "debug_header.hpp"
+
 using namespace std;
 using namespace cv;
 using namespace tree;
-
-//DEBUG
-Mat textDebug;
-Mat lineDebug;
-Mat expandedDebug;
 
 void expandLine(Mat& unexpanded){
   vector<ComponentStats> stats = statistics(unexpanded);
@@ -69,15 +66,15 @@ int distance(const Rect& a, const Rect& b){
 
 template <typename Iterator>
 Rect expand(const Mat& textImg, Iterator begin, Iterator end){
-  Mat hist(Size(textImg.cols, 1), CV_64F, Scalar(0));
-  int cols = 0, headerCount = 0, dataCount = 0;
-  Rect r;
   if (begin == end)
-    return r;
+    return Rect();
+  Mat hist(Size(textImg.cols, 1), CV_64F, Scalar(0));
+  int cols = 1, headerCount = 0, dataCount = 0;
+  Rect r = *begin;
   int boxHeight = begin->height;
   while (begin != end){
     Rect line = *begin++;
-
+    
     //DEBUG
     Mat debug1 = textDebug(line);
     Mat debug2 = lineDebug(line);
@@ -87,15 +84,17 @@ Rect expand(const Mat& textImg, Iterator begin, Iterator end){
     reduce(textImg(line), histRow, 0, CV_REDUCE_SUM, CV_64F);
     histComplete = hist.clone();
     histComplete(Rect(line.x, 0, line.width, 1)) += histRow;
-    list<Line> text, space;
+    list<Line> text, space, textRow, spaceRow;
+    find_lines(histRow, textRow, spaceRow);
     find_lines(histComplete, text, space);
     int dist = distance(r, line);        
-    if (text.size() < cols || text.size() == 1){
+    //    if (text.size() < cols || textRow.size() == 1){
+    if (text.size() <= cols && textRow.size() < 2){
       headerCount++;
-      if (headerCount - dataCount > 1 || dist > boxHeight){
+      if (headerCount - dataCount > 1 || dist > boxHeight || line.y > r.br().y || line.x < r.x || line.br().x > r.br().x){
 	break;
       }
-    }else if ((cols == cols && dist <= 4*boxHeight) || dist < boxHeight){
+    }else if (cols <= text.size() && dist <= 2*boxHeight){
       dataCount++;
       hist = histComplete;
       cols = text.size();

@@ -70,7 +70,7 @@ Rect expand(const Mat& textImg, Iterator begin, Iterator end){
     return Rect();
   Mat hist(Size(textImg.cols, 1), CV_64F, Scalar(0));
   int cols = 1, headerCount = 0, dataCount = 0;
-  Rect r = *begin;
+  Rect r = *begin, headerRect;
   int boxHeight = begin->height;
   while (begin != end){
     Rect line = *begin++;
@@ -79,7 +79,7 @@ Rect expand(const Mat& textImg, Iterator begin, Iterator end){
     Mat debug1 = textDebug(line);
     Mat debug2 = lineDebug(line);
     Mat debug3 = expandedDebug(line);
-
+    
     Mat histRow, histComplete;
     reduce(textImg(line), histRow, 0, CV_REDUCE_SUM, CV_64F);
     histComplete = hist.clone();
@@ -88,8 +88,8 @@ Rect expand(const Mat& textImg, Iterator begin, Iterator end){
     find_lines(histRow, textRow, spaceRow);
     find_lines(histComplete, text, space);
     int dist = distance(r, line);        
-    //    if (text.size() < cols || textRow.size() == 1){
     if (text.size() <= cols && textRow.size() < 2){
+      headerRect = line;
       headerCount++;
       if (headerCount - dataCount > 1 || dist > boxHeight || line.y > r.br().y || line.x < r.x || line.br().x > r.br().x){
 	break;
@@ -125,7 +125,7 @@ list<Rect> expandKernels(const Mat& text, const Mat& expandedLine, const list<Re
     Rect r2 = expand(text, it, all.end());
     Rect r = r1 | r2;
     if (r1 != r2){
-      if (distance(r1, r2) < 0.8*it->height){
+      if (distance(r1, r2) < 2*it->height){
 	expandedKernels.push_back(r);
       }
       else{

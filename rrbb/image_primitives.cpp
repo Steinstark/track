@@ -110,7 +110,7 @@ bool verticalArrangement(Mat& textTable, vector<TextLine>& lines){
     double lv = welford<Rect, int>(merged, [](Rect r){return r.x;});
     double cv = welford<Rect, double>(merged, [](Rect r){return (r.x+r.br().x)*0.5;});
     double rv = welford<Rect, int>(merged, [](Rect r){return r.br().x;});
-    if (lv >= met && cv >= met && rv >= met || ms <= mes || partitions[i].size() < 2)
+    if ((lv >= met && cv >= met && rv >= met) || ms <= mes)
       return false;    
   }
   return true;

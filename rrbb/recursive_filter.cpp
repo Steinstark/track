@@ -186,14 +186,7 @@ list<int> nontextElements(NodeDB& nodes){
   list<int> suspects;
   NodeDB local = nodes;
   minimum_median_filter(local, box, suspects);
-  maximum_median_filter(local, box, suspects);
-
-  //DEBUG
-  /*for (int e : suspects){
-    Mat susp = textDebug(nodes.get<3>().find(e)->r);
-    int a = 0;			 
-    }*/
-  
+  maximum_median_filter(local, box, suspects);  
   classifyAll(nodes, suspects);
   return suspects;
 }

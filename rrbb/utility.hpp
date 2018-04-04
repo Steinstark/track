@@ -72,8 +72,6 @@ void find_lines(const cv::Mat& hist, LineContainer& text, LineContainer& space){
   }
 }
 
-void find_all_lines(const cv::Mat& hist, std::vector<Line>& text, std::vector<Line>& space);
-
 std::list<cv::Rect> mergeIntersecting(std::list<cv::Rect>& tables);
 
 #endif

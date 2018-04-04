@@ -52,17 +52,6 @@ ImageDataBox::ImageDataBox(Mat& text, Mat& nontext): text(text), nontext(nontext
   nontextData = statistics(nontext);
 }
 
-void find_all_lines(const Mat& hist, vector<Line>& text, vector<Line>& space){
-  find_lines(hist, text, space);
-  Line a = text.front();
-  Line b = text.back();
-  int length = max(hist.rows, hist.cols);
-  if (a.l > 1)
-    space.push_back(Line(0, a.l-1));
-  if (b.r < length-1)
-    space.push_back(Line(b.r, length-1));      
-}
-
 list<Rect> mergeIntersecting(list<Rect>& tables){
   list<Rect> merged;
   RTBox tree;

@@ -56,14 +56,17 @@ Mat color2binary(const Mat& img){
   return gray2binary(gray);  
 }
 
+void lineSep(const Mat& img, Mat& line, Mat& element){
+  erode(img, line, element);
+  dilate(line, line, element);
+}
+
 Mat lineMask(Mat& img){
   Mat element = getStructuringElement(MORPH_RECT, Size(1, 29), Point(-1, -1));
   Mat vertical, horizontal;
-  erode(img, vertical, element);
-  dilate(vertical, vertical, element);
+  lineSep(img, vertical, element);
   transpose(element, element);
-  erode(img, horizontal, element);
-  dilate(horizontal, horizontal, element);
+  lineSep(img, horizontal, element);
   return horizontal | vertical;
 }
 

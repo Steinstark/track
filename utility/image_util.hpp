@@ -6,6 +6,8 @@
 
 void move2(cv::Mat& from, cv::Mat& to, const cv::Mat& cc, int i);
 void remove_lines(cv::Mat& from, cv::Mat& to);
+
+void lineSep(const cv::Mat& img, cv::Mat& line, cv::Mat& element);
 cv::Mat lineMask(cv::Mat& img);
   
 

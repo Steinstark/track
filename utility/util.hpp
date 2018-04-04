@@ -9,6 +9,31 @@
 
 bool fileHasType(std::string file, std::string  extension);
 
+class OnlineStat{
+public:
+  OnlineStat(): size(0), mean(0), m2(0) {}
+  
+  template <typename T>
+  double welfordStep(T val){
+    double delta = val - mean;
+    mean += delta/(++size);
+    double delta2 = val - mean;
+    m2 += delta*delta2;
+    if (size < 2)
+      return 0;
+    return sqrt(m2/(size-1));
+  }
+  void reset(){
+    size = 0;
+    mean = 0;
+    m2 = 0;
+    
+  }
+private:
+  size_t size;
+  double mean, m2;
+};
+
 template<typename V, typename T>
 typename std::enable_if<std::is_arithmetic<T>::value, double>::type mean(std::vector<V>& v, std::function<T(V)> f){
   T val = 0;
@@ -27,9 +52,9 @@ typename std::enable_if<std::is_arithmetic<T>::value, double>::type variance(std
 
 template <typename V, typename T>
 typename std::enable_if<std::is_arithmetic<T>::value, double>::type welford(const std::vector<V>& v, std::function<T(V)> f){
+  double mean = 0, m2 = 0;
   if (v.size() < 2)
     return 0;
-  double mean = 0, m2 = 0;
   for (int i = 0; i < v.size(); i++){
     T  val = f(v[i]);
     double delta = val - mean;

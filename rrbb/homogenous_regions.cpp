@@ -5,89 +5,56 @@
 #include "homogenous_regions.hpp"
 #include "image_util.hpp"
 #include "utility.hpp"
+#include "util.hpp"
+
+#include "debug_header.hpp"
 
 using namespace std;
 using namespace cv;
 
 using IntPair = pair<int, int>;
 
-int splitIndex(vector<Line> lines){
-  int maxVal = -1;
-  int index;
-  for (int i = 0; i < lines.size(); i++){
-    if (lines[i].length() > maxVal){
-      maxVal = lines[i].length();
-      index  = i;
-    }
-  }
-  return index;
-}
-
-bool isExtreme(double a, double b){
-  return (a < 0 && b >= 0) || (a >= 0 && b < 0);
-}
-	  
-double similarity(const Mat& hist){
+set<int> split(const Mat& hist){
   int s = 10;
-  Mat blurred, sob;
-  blur(hist, blurred, Size(1,s), Point(-1,-1), BORDER_CONSTANT);
-  vector<Line> text, space;
-  vector<int> a0, a1;
-  find_lines(blurred, text, space);
-  for (int i = 0; i < text.size(); i++){
-    a0.push_back(text[i].length());
-  }
-  for (int i = 0; i < space.size(); i++){
-    a1.push_back(space[i].length());
-  }
-  Mat deltaText = Mat(a0.size(), 1, CV_32S, a0.data()), meanText, devText;
-  Mat deltaSpace = Mat(a1.size(), 1, CV_32S, a1.data()), meanSpace, devSpace;
-  meanStdDev(deltaText, meanText, devText);
-  meanStdDev(deltaSpace, meanSpace, devSpace);
-  double td = devText.at<double>(0,0);
-  double sd = devText.at<double>(0,0);  
-  return (td*td + sd*sd)/2;
-}
-
-set<int> split(Mat& hist){
   vector<Line> text, space;
   find_lines(hist, text, space);
-  set<int> p;
-  if (space.empty()){
-    //cout << "Can't split region without space. Returning split 0" << endl;
-    return p;
+  auto it = space.begin();
+  set<int> splitSet;
+  OnlineStat stat;
+  Line* old;
+  int count = 0;
+  for (Line& l : space){
+    double var = stat.welfordStep(l.length());
+    if (!count){
+      old = &l;
+    }      
+    if (var > 3.5){
+      stat.reset();
+      if (count < 2 && old->length() > l.length()){
+	splitSet.insert((old->l + old->r)/2);
+	stat.welfordStep(l.length());
+	old = &l;
+	count = 0;
+      }
+      else{
+	splitSet.insert((l.l + l.r)/2);
+	count = -1;
+      }
+    }
+    count++;
   }
-  int spaceIndex = splitIndex(space);
-  p.insert((space[spaceIndex].l + space[spaceIndex].r)/2);
-  int textIndex = splitIndex(text);  
-  if (textIndex < space.size()){
-    p.insert((space[textIndex].l + space[textIndex].r)/2);
-  }else if (textIndex != spaceIndex){
-    p.insert((space[textIndex-1].l + space[textIndex-1].r)/2);
-  }
-  return p;
+  return splitSet;
 }
 
 list<IntPair> splitRegion(Mat& hist){
-  list<IntPair> qin, qout;
-  qin.push_back(IntPair(0, hist.rows));  
-  while (qin.size()){
-    IntPair p = qin.front();    
-    qin.pop_front();
-    Rect r = pos2rect(0, p.first, 1, p.second);
-    Mat localHist = hist(r);
-    set<int> positions = split(localHist);
-    if (similarity(localHist) <= 1.2 || positions.empty())
-      qout.push_back(p);
-    else{
-      int prev = p.first;
-      for (int current : positions){
-	qin.push_back(IntPair(prev, p.first+current));
-	prev = p.first + current;
-      }
-      qin.push_back(IntPair(prev, p.second));
-    }
+  list<IntPair> qout;
+  set<int> positions = split(hist);
+  int prev = 0;
+  for (int current : positions){
+    qout.push_back(IntPair(prev, current));
+    prev = current;
   }
+  qout.push_back(IntPair(prev, hist.rows));
   return qout;
 }
 

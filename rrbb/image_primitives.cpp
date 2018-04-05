@@ -6,6 +6,7 @@
 #include <type_traits>
 #include <set>
 #include "util.hpp"
+#include "utility.hpp"
 #include "tree_helper.hpp"
 
 using namespace std;
@@ -85,13 +86,46 @@ vector<Rect> verticalMerge(vector<TextLine>& lines){
   return merged;
 }
 
-bool verticalArrangement(Mat& textTable){
-  vector<ComponentStats> stats = statistics(textTable);
-  vector<Rect> lines;
-  for (ComponentStats cs : stats)
-    lines.push_back(cs.r);
-  vector<TextLine> tls = findLines(lines);
-  return verticalArrangement(textTable, tls);
+list<int> getParts(int length, int n){
+  list<int> parts;
+  int rem = length % n;
+  int part = length / n;
+  int current = part;
+  for (int i = 0; i < n; i++){
+    if (rem){
+      current++;
+      rem--;
+      parts.push_back(current);
+    }else{
+      parts.push_back(current);
+    }
+    current += part;
+  }
+  return parts;
+}
+
+bool verticalArrangement(Mat& text){
+  int score = 0;
+  size_t partitions = 3;
+  Mat hist;
+  reduce(text, hist, 1, CV_REDUCE_SUM, CV_64F);
+  vector<Line> textLine, spaceLine;
+  find_lines(hist, textLine, spaceLine);
+  list<int> parts = getParts(spaceLine.size(), min(spaceLine.size(), partitions));  
+  int current = 0;
+  for (int part : parts){
+    Rect r(0, current,text.cols, spaceLine[part-1].l-current);
+    current = spaceLine[part-1].r;
+    Mat localText = text(r).clone();
+    vector<Rect> lines;
+    boundingVector(localText, back_inserter(lines));
+    vector<TextLine> tls = findLines(lines);
+    for (TextLine tl : tls){
+      rectangle(localText, tl.getBox(), Scalar(255), CV_FILLED);
+    }
+    score += verticalArrangement(localText, tls);
+  }
+  return score > partitions/2;
 }
 
 bool verticalArrangement(Mat& textTable, vector<TextLine>& lines){
@@ -102,17 +136,19 @@ bool verticalArrangement(Mat& textTable, vector<TextLine>& lines){
   vector<vector<TextLine> > partitions = partitionBlocks(lines, space);
   if (partitions.size() < 2)
     return false;
-  double ms = mean<Line, int>(space, [](Line l){return l.length();});
+  set<int> uniqueSizes;
   for (int i = 0; i < partitions.size(); i++){
     vector<Rect> merged = verticalMerge(partitions[i]);
-    double mes = mean<TextLine, double>(partitions[i], [](TextLine tl){return  tl.getSpace();});
-    double met = mean<Rect, int>(merged, [](const Rect& r){return r.width;});
+    double mes = binapprox<TextLine, double>(partitions[i], [](TextLine tl){return  tl.getMeanLength();});
     double lv = welford<Rect, int>(merged, [](Rect r){return r.x;});
     double cv = welford<Rect, double>(merged, [](Rect r){return (r.x+r.br().x)*0.5;});
     double rv = welford<Rect, int>(merged, [](Rect r){return r.br().x;});
-    if ((lv >= met && cv >= met && rv >= met) || ms <= mes)
+    uniqueSizes.insert(partitions[i].size());
+    if (lv > mes && cv > mes && rv > mes)
       return false;    
   }
+  if (uniqueSizes.size() > 5)
+    return false;
   return true;
 }
 

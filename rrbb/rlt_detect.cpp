@@ -4,13 +4,14 @@
 #include "utility.hpp"
 #include "image_util.hpp"
 #include "tree_helper.hpp"
+#include "image_primitives.hpp"
 
 using namespace std;
 using namespace cv;
 using namespace tree;
 
 list<Rect> findRLT(Mat& text, Mat& nontext){
-  int vl = nontext.rows/10, hl = nontext.cols/7;
+  int vl = nontext.rows/11, hl = nontext.cols/7;
   Mat elementV = getStructuringElement(MORPH_RECT, Size(1, vl), Point(-1, -1));
   Mat elementH = getStructuringElement(MORPH_RECT, Size(hl, 1), Point(-1, -1));
   Mat vertical, horizontal;
@@ -26,9 +27,10 @@ list<Rect> findRLT(Mat& text, Mat& nontext){
   }
   list<Rect> tables;
   for (Rect& r : nb){
-    if (search_tree(tree, r).size() >= 10){
+    Mat region = text(r);
+    if (search_tree(tree, r).size() >= 10 && verticalArrangement(region)){
       tables.push_back(r);
-    }      
+    }
   }
   return tables;
 }

@@ -143,12 +143,10 @@ list<Rect> findNRLT(Mat& text, Mat& nontext, ImageMeta& im){
   vector<Rect> bb;
   boundingVector(localText, back_inserter(bb));  
   vector<TextLine> tls = findLines(bb);
-  vector<Rect> tbl;
   RT tree;
   for (int i = 0; i < tls.size(); i++){
     Rect r = tls[i].getBox();
     insert2tree(tree, r, i);
-    tbl.push_back(r);
     rectangle(localText, r, Scalar(255), CV_FILLED);
   }
   Mat expandedLine = localText.clone();

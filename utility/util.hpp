@@ -65,20 +65,20 @@ typename std::enable_if<std::is_arithmetic<T>::value, double>::type welford(cons
   return sqrt(m2/(v.size()-1));
 }
 
-template <typename Number>
-double binapprox(const std::vector<Number>& x) {
+template <typename Type, typename Number>
+double binapprox(const std::vector<Type>& x, std::function<Number(Type)> f){
   // Compute the mean and standard deviation
   int n = x.size();
   double sum = 0;
   int i;
   for (i = 0; i < n; i++) {
-    sum += x[i];
+    sum += f(x[i]);
   }
   double mu = sum/n;
 
   sum = 0;
   for (i = 0; i < n; i++) {
-    sum += (x[i]-mu)*(x[i]-mu);
+    sum += (f(x[i])-mu)*(f(x[i])-mu);
   }
   double sigma = sqrt(sum/n);
 
@@ -94,11 +94,11 @@ double binapprox(const std::vector<Number>& x) {
   int bin;
 
   for (i = 0; i < n; i++) {
-    if (x[i] < leftend) {
+    if (f(x[i]) < leftend) {
       bottomcount++;
     }
-    else if (x[i] < rightend) {
-      bin = (int)((x[i]-leftend) * scalefactor);
+    else if (f(x[i]) < rightend) {
+      bin = (int)((f(x[i])-leftend) * scalefactor);
       bincounts[bin]++;
     }
   }

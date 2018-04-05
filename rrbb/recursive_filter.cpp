@@ -130,7 +130,7 @@ void classifyAll(NodeDB& nodes, list<int>& suspects){
       distances.push_back(dist);
     }      
   }
-  double medWS = binapprox(distances);  
+  double medWS = binapprox<int, double>(distances, [](int v){return v;});  
   double meanWS = mean<int, int>(distances, [](int v){return v;});    
   for (auto it = suspects.begin(); it != suspects.end();){
     Rect r = nodes.get<3>().find(*it)->r;

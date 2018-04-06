@@ -16,7 +16,8 @@ using namespace cv;
 using namespace testutils;
 using namespace dataset;
 
-bool TEST = false;
+bool DISPLAY = false;
+bool SAVE = false;
 
 Page detectPage(const string& filename){
   Mat img = imread(filename.c_str());
@@ -36,7 +37,7 @@ Document detectDocument(set<string>::iterator first, set<string>::iterator last)
     first++;
   }
   attachGT(doc);
-  if (TEST){
+  if (DISPLAY || SAVE){
     namedWindow("page", WINDOW_NORMAL);
     for (pair<int, Page>  p : doc.pages){
       string filename = doc.name + "_" + to_string(p.first) + ".png"; 
@@ -47,8 +48,13 @@ Document detectDocument(set<string>::iterator first, set<string>::iterator last)
       for (Rect r : p.second.gt){
 	rectangle(img, r, Scalar(0, 255, 0), 3);
       }
-      imshow("page", img);
-      waitKey(0);
+      if (DISPLAY){
+	imshow("page", img);
+	waitKey(0);
+      }
+      if (SAVE){
+	imwrite(getDir(filename)+"/output/"+getFile(filename), img);
+      }
     }
   }
   return doc;
@@ -75,8 +81,10 @@ list<Document> detectAll(set<string>& files){
 }
 
 int main(int argc, char** argv){
-  if (argc == 3){
-    TEST = true;
+  for (int i = 2; i < argc; i++){
+    string flag(argv[i]);
+    if (flag == "display") DISPLAY = true;
+    else if (flag == "save") SAVE = true;
   }
   string path(argv[1]);
   string file = getFile(path);

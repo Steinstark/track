@@ -22,12 +22,10 @@ Rect stats2rect(const Mat& stats, int i){
   return Rect(left, top, width, height);
 }
 
-ComponentStats stats2component(const Mat& stats, int statsIndex, int compIndex){
-  if (compIndex < 0)
-    compIndex = statsIndex;
+ComponentStats stats2component(const Mat& stats, int statsIndex){
   Rect r = stats2rect(stats, statsIndex);
   int area = stats.at<int>(statsIndex, CC_STAT_AREA);
-  return ComponentStats(r, area, compIndex);
+  return ComponentStats(r, area, statsIndex);
 }
 
 vector<ComponentStats> statistics(const Mat& img){
@@ -40,7 +38,7 @@ vector<ComponentStats> statistics(const Mat& img, Mat& cc){
   int labels = connectedComponentsWithStats(img, cc, stats, centroids, 8, CV_32S);
   vector<ComponentStats> components;
   for (int i = 1; i < labels; i++){
-    components.push_back(stats2component(stats, i, i-1)); 
+    components.push_back(stats2component(stats, i)); 
   }
   return components;
 }

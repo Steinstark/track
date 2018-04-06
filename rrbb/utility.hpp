@@ -36,7 +36,7 @@ struct ImageDataBox{
   ImageDataBox(cv::Mat& text, cv::Mat& nontext);
 };
 
-ComponentStats stats2component(const cv::Mat& stats, int statsIndex, int compIndex = -1);
+ComponentStats stats2component(const cv::Mat& stats, int statsIndex);
 std::vector<ComponentStats> statistics(const cv::Mat& img, cv::Mat& cc);
 std::vector<ComponentStats> statistics(const cv::Mat& img);
 

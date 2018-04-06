@@ -20,16 +20,23 @@ list<Rect> findRLT(Mat& text, Mat& nontext){
   Mat intersect = vertical & horizontal;
   list<Rect> ib, nb;
   boundingVector(intersect, back_inserter(ib));
-  boundingVector(nontext, back_inserter(nb));
+  Mat cc;
+  vector<ComponentStats> stats = statistics(nontext, cc);
   RTBox tree;
   for (Rect& r : ib){
     insert2tree(tree, r);
   }
   list<Rect> tables;
-  for (Rect& r : nb){
-    Mat region = text(r);
-    if (search_tree(tree, r).size() >= 10 && verticalArrangement(region)){
-      tables.push_back(r);
+  for (ComponentStats& cs : stats){
+    Rect& r = cs.r;
+    Mat textRegion = text(r);
+    if (search_tree(tree, r).size() >= 10 && verticalArrangement(textRegion)){
+      Mat tmp(Size(r.width, r.height), CV_8UC1, Scalar(0));
+      Mat nontextRegion = nontext(r);
+      move2(nontextRegion, tmp, cc(r) , cs.index+1);
+      if (!hasLargeGraphElement(nontextRegion)){
+	tables.push_back(r);
+      }
     }
   }
   return tables;

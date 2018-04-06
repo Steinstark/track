@@ -30,8 +30,13 @@ ComponentStats stats2component(const Mat& stats, int statsIndex, int compIndex){
   return ComponentStats(r, area, compIndex);
 }
 
-vector<ComponentStats> statistics(Mat& img){
-  Mat cc, stats, centroids;
+vector<ComponentStats> statistics(const Mat& img){
+  Mat cc;
+  return statistics(img, cc);
+}
+
+vector<ComponentStats> statistics(const Mat& img, Mat& cc){
+  Mat stats, centroids;
   int labels = connectedComponentsWithStats(img, cc, stats, centroids, 8, CV_32S);
   vector<ComponentStats> components;
   for (int i = 1; i < labels; i++){

@@ -37,7 +37,8 @@ struct ImageDataBox{
 };
 
 ComponentStats stats2component(const cv::Mat& stats, int statsIndex, int compIndex = -1);
-std::vector<ComponentStats> statistics(cv::Mat& img);
+std::vector<ComponentStats> statistics(const cv::Mat& img, cv::Mat& cc);
+std::vector<ComponentStats> statistics(const cv::Mat& img);
 
 template <typename T>
 void boundingVector(const cv::Mat& img, T bb){

@@ -88,6 +88,8 @@ vector<Rect> verticalMerge(vector<TextLine>& lines){
 
 list<int> getParts(int length, int n){
   list<int> parts;
+  if (!length || !n)
+    return parts;
   int rem = length % n;
   int part = length / n;
   int current = part;
@@ -136,19 +138,16 @@ bool verticalArrangement(Mat& textTable, vector<TextLine>& lines){
   vector<vector<TextLine> > partitions = partitionBlocks(lines, space);
   if (partitions.size() < 2)
     return false;
-  set<int> uniqueSizes;
   for (int i = 0; i < partitions.size(); i++){
     vector<Rect> merged = verticalMerge(partitions[i]);
     double mes = binapprox<TextLine, double>(partitions[i], [](TextLine tl){return  tl.getMeanLength();});
     double lv = welford<Rect, int>(merged, [](Rect r){return r.x;});
     double cv = welford<Rect, double>(merged, [](Rect r){return (r.x+r.br().x)*0.5;});
-    double rv = welford<Rect, int>(merged, [](Rect r){return r.br().x;});
-    uniqueSizes.insert(partitions[i].size());
-    if (lv > mes && cv > mes && rv > mes)
-      return false;    
+    double rv = welford<Rect, int>(merged, [](Rect r){return r.br().x;});    
+    if (lv > mes && cv > mes && rv > mes){
+      return false;
+    }
   }
-  if (uniqueSizes.size() > 5)
-    return false;
   return true;
 }
 
@@ -156,7 +155,7 @@ bool noCut(RT& tree, Rect& r){
   return cut_tree(tree, r);
 }
 
-bool mostlyText(vector<ComponentStats> stats){
+bool mostlyText(vector<ComponentStats>& stats){
   if (stats.size() < 2)
     return true;
   int area = 0;
@@ -167,6 +166,11 @@ bool mostlyText(vector<ComponentStats> stats){
       area += stat.area;
   }
   return 0.01*r.area() > area;
+}
+
+bool mostlyText(const Mat& nontext){
+  vector<ComponentStats> stats = statistics(nontext);
+  return mostlyText(stats);
 }
 
 bool manyRows(Mat& img){
@@ -185,6 +189,12 @@ bool hasLargeGraphElement(Rect r, vector<ComponentStats> statsNontext){
   }
   return false;
 }
+
+bool hasLargeGraphElement(const Mat nontext){
+  vector<ComponentStats> stats = statistics(nontext);
+  return hasLargeGraphElement(Rect(0, 0, nontext.cols, nontext.rows), stats);
+}
+
 
 bool similarElementHeight(const vector<ComponentStats>& stats){
   double var = welford<ComponentStats, int>(stats, [](const ComponentStats& cs){return cs.r.height;});

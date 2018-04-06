@@ -17,7 +17,7 @@ void multi_level_analysis(Mat& text, Mat& ntext){
     q.pop();
     Mat imageRegion = text(r);
     list<Rect> regions = homogenous_regions(imageRegion);
-    for (Rect region : regions){
+    for (Rect& region : regions){
       Rect lr = region+r.tl();
       Mat ltext = text(lr), lntext = ntext(lr);
       if (recursive_filter(ltext, lntext))

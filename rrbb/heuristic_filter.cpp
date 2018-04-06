@@ -1,34 +1,30 @@
 #include "heuristic_filter.hpp"
-
 #include <vector>
+#include <boost/geometry.hpp>
+#include <boost/geometry/core/cs.hpp>
+#include <boost/geometry/geometries/register/point.hpp>
+#include <boost/geometry/geometries/register/box.hpp>
 #include "utility.hpp"
 #include "image_util.hpp"
-#include "tree_helper.hpp"
 
 using namespace std;
 using namespace cv;
-using namespace tree;
+namespace bgi = boost::geometry::index;
+
+BOOST_GEOMETRY_REGISTER_POINT_2D(Point, int, cs::cartesian, x, y)
+BOOST_GEOMETRY_REGISTER_BOX(ComponentStats, Point, r.tl(), r.br())
 
 void heuristic_filter(Mat& text, Mat& nontext){
-  Mat cc, stats, centroids;
   remove_lines(text, nontext);
-  int labels = connectedComponentsWithStats(text, cc, stats, centroids, 8, CV_32S);
-  vector<ComponentStats> components;
-  components.push_back(stats2component(stats, 0));
-  RT tree;
-  for (int i = 1; i < labels; i++){
-    ComponentStats cs = stats2component(stats, i);
-    components.push_back(cs);
-    insert2tree(tree, cs.r, i);
-  }
-  vector<int> overlap;
-  for (int i = 1; i < labels; i++){
-    ComponentStats cs = components[i];
+  Mat cc;
+  vector<ComponentStats> stats = statistics(text, cc);
+  bgi::rtree<ComponentStats, bgi::quadratic<16> > tree(stats);						       
+  for (ComponentStats& cs : stats){
     if (cs.area < 6 ||
-	search_tree(tree, cs.r).size() > 5 ||
 	(cs.hwratio < 0.15 && cs.r.width > cs.r.height) ||      
-	cs.density < 0.15){
-      move2(text, nontext, cc, i);
-    }
+	cs.density < 0.15 ||
+	distance(tree.qbegin(bgi::intersects(cs)), tree.qend()) > 5){
+      move2(text, nontext, cc, cs.index);
+    }    
   }  
 }

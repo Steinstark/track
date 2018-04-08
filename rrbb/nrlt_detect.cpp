@@ -139,15 +139,10 @@ list<Rect> expandKernels(const Mat& text, const Mat& expandedLine, const list<Re
 }
 
 list<Rect> findNRLT(Mat& text, Mat& nontext, ImageMeta& im){
-  Mat localText = text.clone();
-  vector<Rect> bb;
-  boundingVector(localText, back_inserter(bb));  
-  vector<TextLine> tls = findLines(bb);
-  RT tree;
-  for (int i = 0; i < tls.size(); i++){
-    Rect r = tls[i].getBox();
-    insert2tree(tree, r, i);
-    rectangle(localText, r, Scalar(255), CV_FILLED);
+  Mat localText = text.clone();  
+  list<TextLine> tls = findLines(text);
+  for (TextLine tl : tls){
+    rectangle(localText, tl.getBox(), Scalar(255), CV_FILLED);
   }
   Mat expandedLine = localText.clone();
   expandLine(expandedLine);

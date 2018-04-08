@@ -33,7 +33,7 @@ list<Rect> findRLT(Mat& text, Mat& nontext){
     if (search_tree(tree, r).size() >= 10 && verticalArrangement(textRegion)){
       Mat tmp(Size(r.width, r.height), CV_8UC1, Scalar(0));
       Mat nontextRegion = nontext(r);
-      move2(nontextRegion, tmp, cc(r) , cs.index+1);
+      move2(nontextRegion, tmp, cc(r) , cs.index);
       if (!hasLargeGraphElement(nontextRegion)){
 	tables.push_back(r);
       }

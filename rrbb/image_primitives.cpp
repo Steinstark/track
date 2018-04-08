@@ -46,7 +46,7 @@ bool manySmallRect(Mat& text, ComponentStats& cs){
   return (area+cs.bb_area-cs.area)/(double)cs.bb_area >= 0.9;
 }
 
-vector<vector<TextLine> > partitionBlocks(vector<TextLine>& lineBoxes, vector<Line>& space){
+vector<vector<TextLine> > partitionBlocks(list<TextLine>& lineBoxes, vector<Line>& space){
   int inf = 1000000;
   map<int, int> table;
   for (int i = 0; i < space.size(); i++){
@@ -119,9 +119,7 @@ bool verticalArrangement(Mat& text){
     Rect r(0, current,text.cols, spaceLine[part-1].l-current);
     current = spaceLine[part-1].r;
     Mat localText = text(r).clone();
-    vector<Rect> lines;
-    boundingVector(localText, back_inserter(lines));
-    vector<TextLine> tls = findLines(lines);
+    list<TextLine> tls = findLines(localText);
     for (TextLine tl : tls){
       rectangle(localText, tl.getBox(), Scalar(255), CV_FILLED);
     }
@@ -130,7 +128,7 @@ bool verticalArrangement(Mat& text){
   return score > partitions/2;
 }
 
-bool verticalArrangement(Mat& textTable, vector<TextLine>& lines){
+bool verticalArrangement(Mat& textTable, list<TextLine>& lines){
   Mat hist;
   vector<Line> text, space;
   reduce(textTable, hist, 0, CV_REDUCE_SUM, CV_64F);
@@ -207,14 +205,13 @@ bool verifyReg(Mat& text, Mat& nontext, int count){
   Rect r(0,0, text.cols, text.rows);
   for (int i = 0; i < statsText.size(); i++)
     insert2tree(tree, statsText[i].r, i); 
-  vector<TextLine> tls = linesInRegion(tree, statsText, r);
   Mat mask, withoutLines;
   mask = lineMask(nontext);
   bitwise_not(mask, withoutLines, nontext);
   vector<ComponentStats> statsNontext = statistics(withoutLines);
   vector<ComponentStats> statsComplete = statistics(nontext);
   bool notInside = count == statsComplete.size();
-  bool isTable=  verticalArrangement(text, tls) &&
+  bool isTable=  verticalArrangement(text) &&
     mostlyText(statsNontext) &&
     manyRows(text) &&
     !hasLargeGraphElement(r, statsNontext) &&

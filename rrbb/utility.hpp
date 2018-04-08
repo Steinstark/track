@@ -4,6 +4,7 @@
 #include <opencv2/opencv.hpp>
 #include <vector>
 #include <algorithm>
+#include "component_stats.hpp"
 #include "tree_helper.hpp"
 
 cv::Rect stats2rect(const cv::Mat& stats, int i);
@@ -14,14 +15,6 @@ struct Line{
   int length() const{
     return r-l;
   }
-};
-
-struct ComponentStats{
-  int index;
-  cv::Rect r;
-  int area, bb_area;
-  double density, hwratio;
-  ComponentStats(cv::Rect r, int area, int i);
 };
 
 struct ImageMeta{
@@ -37,6 +30,15 @@ struct ImageDataBox{
 };
 
 ComponentStats stats2component(const cv::Mat& stats, int statsIndex);
+
+template <typename InsertIterator>
+void statistics(const cv::Mat& img, cv::Mat& cc, InsertIterator it){
+  cv::Mat stats, centroids;
+  int labels = cv::connectedComponentsWithStats(img, cc, stats, centroids, 8, CV_32S);
+  for (int i = 1; i < labels; i++){
+    it = stats2component(stats, i);
+  }
+}
 std::vector<ComponentStats> statistics(const cv::Mat& img, cv::Mat& cc);
 std::vector<ComponentStats> statistics(const cv::Mat& img);
 

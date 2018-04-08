@@ -12,12 +12,9 @@ struct TextLine{
   cv::Rect getBox() const;
   double getSpace();
   double getMeanLength();
-
-  template<typename InputIterator>
-  TextLine(InputIterator first, InputIterator last, const std::vector<cv::Rect>& rects);
+  void addSegment(cv::Rect r);
 };
 
-std::vector<TextLine> linesInRegion(tree::RT& tree, std::vector<ComponentStats>& textData, cv::Rect region);
-std::vector<TextLine> findLines(std::vector<cv::Rect>& rects);
+std::list<TextLine> findLines(cv::Mat& img);
 
 #endif

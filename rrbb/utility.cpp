@@ -34,12 +34,8 @@ vector<ComponentStats> statistics(const Mat& img){
 }
 
 vector<ComponentStats> statistics(const Mat& img, Mat& cc){
-  Mat stats, centroids;
-  int labels = connectedComponentsWithStats(img, cc, stats, centroids, 8, CV_32S);
   vector<ComponentStats> components;
-  for (int i = 1; i < labels; i++){
-    components.push_back(stats2component(stats, i)); 
-  }
+  statistics(img, cc, back_inserter(components));
   return components;
 }
 

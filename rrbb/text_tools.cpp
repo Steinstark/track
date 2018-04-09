@@ -36,7 +36,9 @@ void TextLine::addSegment(Rect segment){
 }
 
 bool isSegment(const Rect& a, const Rect& b){
-  return min(abs(a.x-b.br().x), abs(a.br().x-b.x)) <= max(a.height, b.height);
+  if (a != Rect() && b != Rect())
+    return min(abs(a.x-b.br().x), abs(a.br().x-b.x)) <= max(a.height, b.height);
+  return true;
 }
 
 list<TextLine> findLines(Mat& img){
@@ -63,6 +65,8 @@ list<TextLine> findLines(Mat& img){
       }	
       it++;
     }
+    if (tl.elements.empty() || tl.elements.back() != r)
+      tl.addSegment(r);
     ret.push_back(tl);
   }
   return ret;

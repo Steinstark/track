@@ -17,73 +17,29 @@ bool isLine(const ComponentStats& cs){
   return cs.hwratio < 0.10;  
 }
 
-bool regionIsRectangle(const ComponentStats& cs){
-  return (cs.bb_area - cs.area)/(double)cs.bb_area > 0.85;
-}
-
-bool isColorBlock(ImageMeta& im, const ComponentStats& cs){
-  Rect r = cs.r;
-  Point tl(r.x-r.width, r.y-r.height);
-  Rect vicinity(tl.x, tl.y, r.width*3, r.height*3);
-  return search_tree(im.nt_tree, vicinity).size() > 3 && cs.area/cs.bb_area >= 0.9;
-  }
 
 bool containsManyElements(RT& tree, const ComponentStats& cs){
   return search_tree(tree, cs.r).size() >= 10;
 }
 
-bool manySmallRect(Mat& text, ComponentStats& cs){  
-  Mat cc, stats, centroids;
-  int labels = connectedComponentsWithStats(text, cc, stats, centroids, 8, CV_32S);
-  int area = 0;
-  for (int i = 1; i < labels; i++){
-    ComponentStats csl = stats2component(stats, i);
-    if (regionIsRectangle(cs))
-      area += csl.bb_area;
-    else
-      return false;
-  }
-  return (area+cs.bb_area-cs.area)/(double)cs.bb_area >= 0.9;
-}
-
-vector<vector<TextLine> > partitionBlocks(list<TextLine>& lineBoxes, vector<Line>& space){
+vector<TextLine> partitionBlocks(list<TextLine>& lineBoxes, vector<Line>& space){
   int inf = 1000000;
   map<int, int> table;
   for (int i = 0; i < space.size(); i++){
     table[space[i].l] = i;    
   }
   table[inf] = space.size();
-  vector<vector<TextLine> > partitions(space.size()+1, vector<TextLine>());
+  vector<TextLine> partitions(space.size()+1);
   for (TextLine& line : lineBoxes){
-    auto it = table.upper_bound(line.getBox().x-1);
-    if (it != table.end()){
-      partitions[it->second].push_back(line);
-    }else
-      cout << "Left index is larger than " << inf << endl;
-  }
-  return partitions;
-}
-
-vector<Rect> verticalMerge(vector<TextLine>& lines){
-  vector<Rect> boxes;
-  if (lines.empty())
-    return boxes;
-  for (int i = 0; i < lines.size(); i++){
-    boxes.push_back(lines[i].getBox());
-  }
-  sort(boxes.begin(), boxes.end(), [](const Rect& a, const Rect& b){return a.y < b.y;});
-  vector<Rect> merged;
-  Rect current = boxes[0];  
-  for (int i = 1; i < boxes.size(); i++){
-    if (current.y <= boxes[i].y && current.br().y >= boxes[i].y){
-      current |= boxes[i];
-    }else{
-      merged.push_back(current);
-      current = boxes[i];
+    for (Rect& e : line.elements){
+      auto it = table.upper_bound(e.x-1);
+      if (it != table.end()){
+	partitions[it->second].addSegment(e);
+      }else
+	cout << "Left index is larger than " << inf << endl;
     }
   }
-  merged.push_back(current);
-  return merged;
+  return partitions;
 }
 
 list<int> getParts(int length, int n){
@@ -121,7 +77,9 @@ bool verticalArrangement(Mat& text){
     Mat localText = text(r).clone();
     list<TextLine> tls = findLines(localText);
     for (TextLine tl : tls){
-      rectangle(localText, tl.getBox(), Scalar(255), CV_FILLED);
+      for (Rect& seg : tl.elements){
+	rectangle(localText, seg, Scalar(255), CV_FILLED);
+      }
     }
     score += verticalArrangement(localText, tls);
   }
@@ -133,24 +91,19 @@ bool verticalArrangement(Mat& textTable, list<TextLine>& lines){
   vector<Line> text, space;
   reduce(textTable, hist, 0, CV_REDUCE_SUM, CV_64F);
   find_lines(hist, text, space);
-  vector<vector<TextLine> > partitions = partitionBlocks(lines, space);
+  vector<TextLine> partitions = partitionBlocks(lines, space);
   if (partitions.size() < 2)
     return false;
   for (int i = 0; i < partitions.size(); i++){
-    vector<Rect> merged = verticalMerge(partitions[i]);
-    double mes = binapprox<TextLine, double>(partitions[i], [](TextLine tl){return  tl.getMeanLength();});
-    double lv = welford<Rect, int>(merged, [](Rect r){return r.x;});
-    double cv = welford<Rect, double>(merged, [](Rect r){return (r.x+r.br().x)*0.5;});
-    double rv = welford<Rect, int>(merged, [](Rect r){return r.br().x;});    
-    if (lv > mes && cv > mes && rv > mes){
+    double med = binapprox<Rect, int>(partitions[i].elements, [](Rect r){return  r.width;});
+    double lv = welford<Rect, int>(partitions[i].elements, [](Rect r){return r.x;});
+    double cv = welford<Rect, double>(partitions[i].elements, [](Rect r){return (r.x+r.br().x)*0.5;});
+    double rv = welford<Rect, int>(partitions[i].elements, [](Rect r){return r.br().x;});    
+    if (lv > med && cv > med && rv > med){
       return false;
     }
   }
   return true;
-}
-
-bool noCut(RT& tree, Rect& r){
-  return cut_tree(tree, r);
 }
 
 bool mostlyText(vector<ComponentStats>& stats){
@@ -164,11 +117,6 @@ bool mostlyText(vector<ComponentStats>& stats){
       area += stat.area;
   }
   return 0.01*r.area() > area;
-}
-
-bool mostlyText(const Mat& nontext){
-  vector<ComponentStats> stats = statistics(nontext);
-  return mostlyText(stats);
 }
 
 bool manyRows(Mat& img){
@@ -191,12 +139,6 @@ bool hasLargeGraphElement(Rect r, vector<ComponentStats> statsNontext){
 bool hasLargeGraphElement(const Mat nontext){
   vector<ComponentStats> stats = statistics(nontext);
   return hasLargeGraphElement(Rect(0, 0, nontext.cols, nontext.rows), stats);
-}
-
-
-bool similarElementHeight(const vector<ComponentStats>& stats){
-  double var = welford<ComponentStats, int>(stats, [](const ComponentStats& cs){return cs.r.height;});
-  return var < 10;
 }
 
 bool verifyReg(Mat& text, Mat& nontext, int count){

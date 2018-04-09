@@ -8,16 +8,12 @@
 
 bool isLine(const ComponentStats& cs);
 bool regionIsRectangle(const ComponentStats& cs);
-bool isColorBlock(ImageMeta& im, const ComponentStats& cs);
 bool containsManyElements(tree::RT& tree, const ComponentStats& cs);
 
 bool hasLowDensity(ComponentStats& cs);
 bool verticalArrangement(cv::Mat& textTable);
 bool verticalArrangement(cv::Mat& textTable, std::list<TextLine>& lines);
 bool manySmallRect(cv::Mat& text, ComponentStats& cs);
-bool noCut(ImageMeta& im, std::vector<ComponentStats>& textData, cv::Rect r);
-bool onlyText(ImageMeta& im, cv::Rect r);
-bool verify(cv::Mat& region, ImageMeta& im, std::vector<ComponentStats>& textData, ComponentStats& cs);
 bool verifyReg(cv::Mat& text, cv::Mat& nontext, int count);
 bool mostlyText(const cv::Mat& nontext);
 bool hasLargeGraphElement(const cv::Mat nontext);

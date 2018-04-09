@@ -67,7 +67,7 @@ void find_lines(const cv::Mat& hist, LineContainer& text, LineContainer& space){
   if (t != -1)
     text.push_back(Line(t,length));
   auto it = text.begin();
-  Line& prev = *it++;
+  Line prev = *it++;
   while (it !=text.end()){
     Line current = *it++;
     space.push_back(Line(prev.r, current.l));

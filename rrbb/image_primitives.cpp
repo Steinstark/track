@@ -17,11 +17,6 @@ bool isLine(const ComponentStats& cs){
   return cs.hwratio < 0.10;  
 }
 
-
-bool containsManyElements(RT& tree, const ComponentStats& cs){
-  return search_tree(tree, cs.r).size() >= 10;
-}
-
 vector<TextLine> partitionBlocks(list<TextLine>& lineBoxes, vector<Line>& space){
   int inf = 1000000;
   map<int, int> table;

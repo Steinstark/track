@@ -7,15 +7,11 @@
 #include "tree_helper.hpp"
 
 bool isLine(const ComponentStats& cs);
-bool regionIsRectangle(const ComponentStats& cs);
-bool containsManyElements(tree::RT& tree, const ComponentStats& cs);
-
+bool hasLargeGraphElement(const cv::Mat nontext);
 bool hasLowDensity(ComponentStats& cs);
+bool mostlyText(const cv::Mat& nontext);
+bool verifyReg(cv::Mat& text, cv::Mat& nontext, int count);
 bool verticalArrangement(cv::Mat& textTable);
 bool verticalArrangement(cv::Mat& textTable, std::list<TextLine>& lines);
-bool manySmallRect(cv::Mat& text, ComponentStats& cs);
-bool verifyReg(cv::Mat& text, cv::Mat& nontext, int count);
-bool mostlyText(const cv::Mat& nontext);
-bool hasLargeGraphElement(const cv::Mat nontext);
 
 #endif

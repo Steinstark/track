@@ -13,6 +13,7 @@ struct TextLine{
   double getSpace();
   double getMeanLength();
   void addSegment(cv::Rect r);
+  TextLine(): box(), elements() {};
 };
 
 std::list<TextLine> findLines(cv::Mat& img);

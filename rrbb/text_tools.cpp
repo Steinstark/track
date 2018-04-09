@@ -64,5 +64,6 @@ list<TextLine> findLines(Mat& img){
       it++;
     }
     ret.push_back(tl);
-  }  
+  }
+  return ret;
 }

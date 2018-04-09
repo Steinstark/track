@@ -19,6 +19,7 @@
 using namespace std;
 using namespace cv;
 using namespace boost::multi_index;
+namespace bg = boost::geometry;
 namespace bgi = boost::geometry::index;
 
 using IntPair = pair<int, int>;
@@ -95,32 +96,31 @@ bool classify(int minSpace, double medws, double meanws){
   return minSpace > max(medws, meanws) &&  minSpace > 3*meanws;
 }
 
-int minDist(bgi::rtree<ComponentStats, bgi::quadratic<16> > tree, const Rect& r){
+double minDist(bgi::rtree<ComponentStats, bgi::quadratic<16> > tree, const Rect& r){
   int inf = 1000000;
-  Point p = (r.tl() + r.br())/2;
-  auto it1 = tree.qbegin(bgi::nearest(p, 1) && bgi::intersects(Rect(0,r.y, inf, r.height)));
+  auto it1 = tree.qbegin(bgi::nearest(r, 1) && bgi::intersects(Rect(0,r.y, inf, r.height)) && bgi::disjoint(r));
   if (it1 != tree.qend()){
-    return min(abs(it1->r.x - r.br().x), abs(it1->r.br().x-r.x));
+    return bg::comparable_distance(r, it1->r);
   }
-  it1 = tree.qbegin(bgi::nearest(p, 1));
+  it1 = tree.qbegin(bgi::nearest(r, 1) && bgi::disjoint(r));
   if (it1 != tree.qend()){
-    return sqrt(pow((it1->r.x - p.x),2) + pow((it1->r.y - p.y),2)) + 1;
+    return bg::comparable_distance(r, it1->r);
   }
   return 0;
 }
 
 void classifyAll(NodeDB& nodes, list<int>& suspects){
   bgi::rtree<ComponentStats, bgi::quadratic<16> > tree(nodes);
-  vector<int> distances;
+  vector<double> distances;
   for (auto it = nodes.begin(); it != nodes.end(); it++){
-    int dist = minDist(tree, it->r);
+    double dist = minDist(tree, it->r);
     distances.push_back(dist);
   }
-  double medWS = binapprox<int, double>(distances, [](int v){return v;});  
-  double meanWS = mean<int, int>(distances, [](int v){return v;});    
+  double medWS = binapprox<double, double>(distances, [](double v){return v;});  
+  double meanWS = mean<double, double>(distances, [](double v){return v;});    
   for (auto it = suspects.begin(); it != suspects.end();){
     Rect r = nodes.get<3>().find(*it)->r;
-    int dist = minDist(tree, r);
+    double dist = minDist(tree, r);
     if (!classify(dist, medWS, meanWS)){
       it = suspects.erase(it);
     }else{

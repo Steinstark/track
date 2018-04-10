@@ -4,14 +4,15 @@
 #include <functional>
 #include <list>
 #include <utility>
+#include <map>
 #include <opencv2/opencv.hpp>
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/identity.hpp>
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/global_fun.hpp>
-#include "utility.hpp"
 #include "util.hpp"
+#include "utility.hpp"
 #include "image_util.hpp"
 
 #include "debug_header.hpp"
@@ -23,6 +24,7 @@ namespace bg = boost::geometry;
 namespace bgi = boost::geometry::index;
 
 using IntPair = pair<int, int>;
+using DoublePair = pair<double, double>;
 
 int widthExtractor(const ComponentStats& cs){
   return cs.r.width;
@@ -92,10 +94,6 @@ struct DataBox{
   }
 };
 
-bool classify(int minSpace, double medws, double meanws){
-  return minSpace > max(medws, meanws) &&  minSpace > 3*meanws;
-}
-
 double minDist(bgi::rtree<ComponentStats, bgi::quadratic<16> >& tree, const Rect& r){
   auto it1 = tree.qbegin(bgi::nearest(r, 1) && !bgi::covered_by(r));
   if (it1 != tree.qend()){
@@ -104,21 +102,54 @@ double minDist(bgi::rtree<ComponentStats, bgi::quadratic<16> >& tree, const Rect
   return 0;
 }
 
+list<DoublePair> getKBest(set<double>& distances, int k = 2){
+  OnlineStat stat;
+  multimap<int, DoublePair> best;
+  DoublePair p(0,0);
+  int count = 0;
+  for (int e : distances){
+    double var =stat.welfordStep(e);
+    if (var > 2){
+      best.insert(pair<int, DoublePair>(count, p));
+      stat.reset();
+      count = 0;
+      var = stat.welfordStep(e);
+    }
+    p.first = stat.getMean();
+    p.second = var;
+    count++;
+  }
+  best.insert(pair<int, DoublePair>(count, p));
+  auto it = best.rbegin();
+  int c = 0;
+  list<DoublePair> ret;
+  while (it != best.rend() && c < k){
+    ret.push_back(it->second);
+    c++;
+  }
+  return ret;
+}
+
 void classifyAll(NodeDB& nodes, list<int>& suspects){
   bgi::rtree<ComponentStats, bgi::quadratic<16> > tree(nodes);
-  vector<double> distances;
+  set<double> distances;
   for (auto it = nodes.begin(); it != nodes.end(); it++){
     double dist = minDist(tree, it->r);
-    distances.push_back(dist);
+    distances.insert(dist);
   }
-  double medWS = binapprox<double, double>(distances, [](double v){return v;});  
-  double meanWS = mean<double, double>(distances, [](double v){return v;});    
+  list<DoublePair> best = getKBest(distances);  
   for (auto it = suspects.begin(); it != suspects.end();){
     Rect r = nodes.get<3>().find(*it)->r;
     double dist = minDist(tree, r);
-    if (!classify(dist, medWS, meanWS)){
-      it = suspects.erase(it);
-    }else{
+    bool removed = false;
+    for (DoublePair p : best){
+      if (gaussWeight(dist, p.first, p.second)){
+	it = suspects.erase(it);
+	removed = true;
+	break;
+      }
+    }
+    if (!removed){
       //DEBUG
       Mat regionDebug = textDebug(r);
       it++;

@@ -29,6 +29,9 @@ public:
     m2 = 0;
     
   }
+  double getMean(){
+    return mean;
+  }
 private:
   size_t size;
   double mean, m2;
@@ -137,6 +140,8 @@ double binapprox(const std::vector<Type>& x, std::function<Number(Type)> f){
       }
     }
   } 
-} 
+}
+
+double gaussWeight(double x, double mean, double var);
 
 #endif

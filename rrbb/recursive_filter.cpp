@@ -96,13 +96,8 @@ bool classify(int minSpace, double medws, double meanws){
   return minSpace > max(medws, meanws) &&  minSpace > 3*meanws;
 }
 
-double minDist(bgi::rtree<ComponentStats, bgi::quadratic<16> > tree, const Rect& r){
-  int inf = 1000000;
-  auto it1 = tree.qbegin(bgi::nearest(r, 1) && bgi::intersects(Rect(0,r.y, inf, r.height)) && bgi::disjoint(r));
-  if (it1 != tree.qend()){
-    return bg::comparable_distance(r, it1->r);
-  }
-  it1 = tree.qbegin(bgi::nearest(r, 1) && bgi::disjoint(r));
+double minDist(bgi::rtree<ComponentStats, bgi::quadratic<16> >& tree, const Rect& r){
+  auto it1 = tree.qbegin(bgi::nearest(r, 1) && !bgi::covered_by(r));
   if (it1 != tree.qend()){
     return bg::comparable_distance(r, it1->r);
   }

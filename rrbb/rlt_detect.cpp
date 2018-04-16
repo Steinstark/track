@@ -11,13 +11,14 @@ using namespace cv;
 using namespace tree;
 
 list<Rect> findRLT(Mat& text, Mat& nontext){
-  int vl = nontext.rows/11, hl = nontext.cols/7;
+  int vl = nontext.rows/19, hl = nontext.cols/19;
   Mat elementV = getStructuringElement(MORPH_RECT, Size(1, vl), Point(-1, -1));
   Mat elementH = getStructuringElement(MORPH_RECT, Size(hl, 1), Point(-1, -1));
   Mat vertical, horizontal;
   lineSep(nontext, vertical, elementV);
   lineSep(nontext, horizontal, elementH);
   Mat intersect = vertical & horizontal;
+  Mat lines = vertical | horizontal;
   list<Rect> ib, nb;
   boundingVector(intersect, back_inserter(ib));
   Mat cc;
@@ -30,11 +31,19 @@ list<Rect> findRLT(Mat& text, Mat& nontext){
   for (ComponentStats& cs : stats){
     Rect& r = cs.r;
     Mat textRegion = text(r);
-    if (search_tree(tree, r).size() >= 10 && verticalArrangement(textRegion)){
+    Mat invertedLines;
+    bitwise_not(lines(r), invertedLines);
+
+    Mat sob;
+    Sobel(invertedLines, sob, CV_64F, 1, 1, 1, 1, 0, BORDER_CONSTANT);
+
+    
+    if (search_tree(tree, r).size() >= 10 && verticalArrangement(invertedLines)){
       Mat tmp(Size(r.width, r.height), CV_8UC1, Scalar(0));
       Mat nontextRegion = nontext(r);
-      move2(nontextRegion, tmp, cc(r) , cs.index);
-      if (!hasLargeGraphElement(nontextRegion)){
+      Mat mask = cc(r) == cs.index & lines(r);
+      bitwise_xor(nontextRegion, mask, tmp);
+      if (!hasLargeGraphElement(tmp)){
 	tables.push_back(r);
       }
     }

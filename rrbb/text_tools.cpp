@@ -41,7 +41,7 @@ bool isSegment(const Rect& a, const Rect& b){
   return true;
 }
 
-list<TextLine> findLines(Mat& img){
+list<TextLine> findLines(Mat& img, bool expand){
   Mat cc, hist;
   list<ComponentStats> stats;
   statistics(img, cc, back_inserter(stats));
@@ -57,7 +57,7 @@ list<TextLine> findLines(Mat& img){
     TextLine tl;
     Rect r;
     while (it != tree.qend()){
-      if (isSegment(r, it->r)){
+      if (expand && isSegment(r, it->r)){
 	r |= it->r;
       }else{
 	tl.addSegment(r);

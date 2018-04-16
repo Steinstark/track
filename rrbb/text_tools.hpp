@@ -16,6 +16,6 @@ struct TextLine{
   TextLine(): box(), elements() {};
 };
 
-std::list<TextLine> findLines(cv::Mat& img);
+std::list<TextLine> findLines(cv::Mat& img, bool expand = true);
 
 #endif

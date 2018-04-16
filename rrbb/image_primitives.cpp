@@ -63,20 +63,15 @@ bool verticalArrangement(Mat& text){
   Mat hist;
   reduce(text, hist, 1, CV_REDUCE_SUM, CV_64F);
   vector<Line> textLine, spaceLine;
-  find_lines(hist, textLine, spaceLine);
+  find_lines(hist, textLine, spaceLine, text.cols*0.1);
   list<int> parts = getParts(spaceLine.size(), min(spaceLine.size(), partitions));  
   int current = 0;
   for (int part : parts){
     Rect r(0, current,text.cols, spaceLine[part-1].l-current);
+    Mat local = text(r);
     current = spaceLine[part-1].r;
-    Mat localText = text(r).clone();
-    list<TextLine> tls = findLines(localText);
-    for (TextLine tl : tls){
-      for (Rect& seg : tl.elements){
-	rectangle(localText, seg, Scalar(255), CV_FILLED);
-      }
-    }
-    score += verticalArrangement(localText, tls);
+    list<TextLine> tls = findLines(local, false);
+    score += verticalArrangement(local, tls);
   }
   return score > partitions/2;
 }
@@ -90,7 +85,8 @@ bool verticalArrangement(Mat& textTable, list<TextLine>& lines){
   if (partitions.size() < 2)
     return false;
   for (int i = 0; i < partitions.size(); i++){
-    double med = binapprox<Rect, int>(partitions[i].elements, [](Rect r){return  r.width;});
+    //    double med = binapprox<Rect, int>(partitions[i].elements, [](Rect r){return  r.width;});
+    double med = 3;
     double lv = welford<Rect, int>(partitions[i].elements, [](Rect r){return r.x;});
     double cv = welford<Rect, double>(partitions[i].elements, [](Rect r){return (r.x+r.br().x)*0.5;});
     double rv = welford<Rect, int>(partitions[i].elements, [](Rect r){return r.br().x;});    
@@ -124,8 +120,11 @@ bool manyRows(Mat& img){
 }
 
 bool hasLargeGraphElement(Rect r, vector<ComponentStats> statsNontext){
+  double area = 0.05*r.area();
+  int areaSum = 0;
   for (ComponentStats& cs : statsNontext){
-    if (cs.bb_area  >= 0.1*r.area())
+    areaSum += cs.bb_area;
+    if (areaSum > area)
       return true;
   }
   return false;

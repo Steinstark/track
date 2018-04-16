@@ -1,2 +1,5 @@
-add_library(detect_table rrbb.cpp heuristic_filter.cpp mla.cpp mlc.cpp recursive_filter.cpp noise.cpp detect.cpp image_primitives.cpp utility.cpp homogenous_regions.cpp text_tools.cpp rlt_detect.cpp nrlt_detect.cpp debug_header.cpp)
-target_link_libraries(detect_table util)
+add_library(heuristic_filter heuristic_filter.cpp utility.cpp)
+add_library(mlh mla.cpp mlc.cpp recursive_filter.cpp homogenous_regions.cpp debug_header.cpp) 
+add_library(detect detect.cpp rlt_detect.cpp image_primitives.cpp text_tools.cpp)
+add_library(detect_table rrbb.cpp)
+target_link_libraries(detect_table heuristic_filter mlh detect util)

@@ -38,38 +38,3 @@ vector<ComponentStats> statistics(const Mat& img, Mat& cc){
   statistics(img, cc, back_inserter(components));
   return components;
 }
-
-ImageMeta::ImageMeta(int width, int height, vector<ComponentStats>& text, vector<ComponentStats>& nontext): width(width), height(height){
-  for (int i = 0; i < text.size(); i++)
-    insert2tree(t_tree, text[i].r, i);
-  for (int i = 0; i < nontext.size(); i++)
-    insert2tree(nt_tree, nontext[i].r, i);    
-}
-
-ImageDataBox::ImageDataBox(Mat& text, Mat& nontext): text(text), nontext(nontext){
-  textData = statistics(text);
-  nontextData = statistics(nontext);
-}
-
-list<Rect> mergeIntersecting(list<Rect>& tables){
-  list<Rect> merged;
-  RTBox tree;
-  for (Rect& table : tables){
-    insert2tree(tree, table);
-  }
-  while (tree.size()){
-    auto it = tree_begin(tree);
-    Rect r = bb2cvr(*it);
-    while (true){
-      list<Rect> intersects = search_tree(tree, r);
-      if (intersects.empty())
-	break;
-      for (Rect& intersect: intersects){
-	r |= intersect;
-	remove_tree(tree, intersect);
-      }
-    }
-    merged.push_back(r);
-  }
-  return merged;
-}

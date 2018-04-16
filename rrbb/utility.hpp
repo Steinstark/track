@@ -3,9 +3,7 @@
 
 #include <opencv2/opencv.hpp>
 #include <vector>
-#include <algorithm>
 #include "component_stats.hpp"
-#include "tree_helper.hpp"
 
 cv::Rect stats2rect(const cv::Mat& stats, int i);
 
@@ -15,18 +13,6 @@ struct Line{
   int length() const{
     return r-l;
   }
-};
-
-struct ImageMeta{
-  int width, height;
-  tree::RT t_tree, nt_tree;
-  ImageMeta(int width, int height, std::vector<ComponentStats>& text, std::vector<ComponentStats>& nontext);
-};
-
-struct ImageDataBox{
-  cv::Mat text, nontext;
-  std::vector<ComponentStats> textData, nontextData;
-  ImageDataBox(cv::Mat& text, cv::Mat& nontext);
 };
 
 ComponentStats stats2component(const cv::Mat& stats, int statsIndex);
@@ -52,14 +38,14 @@ void boundingVector(const cv::Mat& img, T bb){
 }
 
 template <typename LineContainer>
-void find_lines(const cv::Mat& hist, LineContainer& text, LineContainer& space){
+void find_lines(const cv::Mat& hist, LineContainer& text, LineContainer& space, double lim = 0){
   int length = std::max(hist.rows, hist.cols);
   int t = 0;
   for (int i = 1; i < length; i++){
-    if (!hist.at<double>(i-1) && hist.at<double>(i)){
+    if (!(hist.at<double>(i-1) < lim) && hist.at<double>(i) >= lim){
       t = i;
     }
-    else if (hist.at<double>(i-1) && !hist.at<double>(i)){
+    else if ((hist.at<double>(i-1) >= lim) && !(hist.at<double>(i) < lim)){
       text.push_back(Line(t,i));
       t = -1;
     }

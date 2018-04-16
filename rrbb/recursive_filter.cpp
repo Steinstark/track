@@ -102,59 +102,22 @@ double minDist(bgi::rtree<ComponentStats, bgi::quadratic<16> >& tree, const Rect
   return 0;
 }
 
-list<DoublePair> getKBest(set<double>& distances, int k = 2){
-  OnlineStat stat;
-  multimap<int, DoublePair> best;
-  DoublePair p(0,0);
-  int count = 0;
-  for (int e : distances){
-    double var =stat.welfordStep(e);
-    if (var > 2){
-      best.insert(pair<int, DoublePair>(count, p));
-      stat.reset();
-      count = 0;
-      var = stat.welfordStep(e);
-    }
-    p.first = stat.getMean();
-    p.second = var;
-    count++;
-  }
-  best.insert(pair<int, DoublePair>(count, p));
-  auto it = best.rbegin();
-  int c = 0;
-  list<DoublePair> ret;
-  while (it != best.rend() && c < k){
-    ret.push_back(it->second);
-    c++;
-  }
-  return ret;
-}
-
-void classifyAll(NodeDB& nodes, list<int>& suspects){
+list<int> classifyAll(const NodeDB& nodes, const list<int>& suspects){
   bgi::rtree<ComponentStats, bgi::quadratic<16> > tree(nodes);
-  set<double> distances;
-  for (auto it = nodes.begin(); it != nodes.end(); it++){
-    double dist = minDist(tree, it->r);
-    distances.insert(dist);
+  double mean = 0;
+  double var = welford(nodes.begin(),
+		       nodes.end(),
+		       [&tree](const ComponentStats& cs){return minDist(tree, cs.r);},
+		       mean);
+  list<int> confirmed;
+  for (int e : suspects){
+    Rect r = nodes.get<3>().find(e)->r;
+    double dist = sqrt(minDist(tree, r));
+    if (dist > 2*var && dist > 4*mean){
+      confirmed.push_back(e);
+    }   
   }
-  list<DoublePair> best = getKBest(distances);  
-  for (auto it = suspects.begin(); it != suspects.end();){
-    Rect r = nodes.get<3>().find(*it)->r;
-    double dist = minDist(tree, r);
-    bool removed = false;
-    for (DoublePair p : best){
-      if (gaussWeight(dist, p.first, p.second)){
-	it = suspects.erase(it);
-	removed = true;
-	break;
-      }
-    }
-    if (!removed){
-      //DEBUG
-      Mat regionDebug = textDebug(r);
-      it++;
-    }
-  }
+  return confirmed;
 }
 
 bool median_filter(Rect& r, function<bool(int, int)> f){
@@ -199,8 +162,7 @@ list<int> nontextElements(NodeDB& nodes){
   NodeDB local = nodes;
   minimum_median_filter(local, box, suspects);
   maximum_median_filter(local, box, suspects);  
-  classifyAll(nodes, suspects);
-  return suspects;
+  return classifyAll(nodes, suspects);
 }
 
 bool recursive_filter(Mat& text, Mat& nontext){
@@ -211,6 +173,8 @@ bool recursive_filter(Mat& text, Mat& nontext){
   nontextDebug = nontext;
   Mat cc;
   statistics(text, cc, inserter(nodes, nodes.begin()));
+  if (nodes.empty())
+    return false;
   int count = nodes.size();
   list<int> toRemove = nontextElements(nodes);
   for (int e : toRemove){

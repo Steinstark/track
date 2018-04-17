@@ -37,39 +37,53 @@ vector<TextLine> partitionBlocks(list<TextLine>& lineBoxes, vector<Line>& space)
   return partitions;
 }
 
-list<int> getParts(int length, int n){
-  list<int> parts;
-  if (!length || !n)
-    return parts;
-  int rem = length % n;
-  int part = length / n;
-  int current = part;
-  for (int i = 0; i < n; i++){
-    if (rem){
-      current++;
-      rem--;
-      parts.push_back(current);
-    }else{
-      parts.push_back(current);
+list<Line> getParts(int rows, int partitions, vector<Line>& text){  
+  int start = 0, goal = rows/partitions, pr = 0;
+  int prevDist = goal - start;
+  list<Line> bound;
+  for (Line& l : text){
+    int dist = abs(goal - l.r+1);
+    if (dist > prevDist){
+      bound.push_back(Line(start, pr));
+      start = pr;
+      goal = start + (rows - start)/--partitions;
+      prevDist = goal - start;
+    }else {
+      prevDist = dist;
+      pr = l.r+1;
     }
-    current += part;
   }
-  return parts;
+  bound.push_back(Line(start, goal));
+  return bound;
 }
 
 bool verticalArrangement(Mat& text){
   int score = 0;
-  size_t partitions = 3;
-  Mat hist;
-  reduce(text, hist, 1, CV_REDUCE_SUM, CV_64F);
+  Mat yHist, tmp;
+  int limY = text.cols*255*0.1;
+  reduce(text, yHist, 1, CV_REDUCE_SUM, CV_64F);  
+  for (int i = 0; i < yHist.rows; i++){
+    if (yHist.at<double>(i) < limY){
+      text.row(i).setTo(0);
+    }
+  }  
   vector<Line> textLine, spaceLine;
-  find_lines(hist, textLine, spaceLine, text.cols*0.1);
-  list<int> parts = getParts(spaceLine.size(), min(spaceLine.size(), partitions));  
-  int current = 0;
-  for (int part : parts){
-    Rect r(0, current,text.cols, spaceLine[part-1].l-current);
-    Mat local = text(r);
-    current = spaceLine[part-1].r;
+  find_lines(yHist, textLine, spaceLine, limY);
+  int partitions = min(3, (int)textLine.size());
+  if (partitions <= 1){
+    return 0;
+  }
+  list<Line> parts = getParts(text.rows, partitions, textLine);  
+  for (Line& part : parts){
+    Rect r(0, part.l ,text.cols, part.length());
+    Mat local = text(r), xHist;
+    reduce(local, xHist, 0, CV_REDUCE_SUM, CV_64F);
+    int limX = 255*local.rows*0.1;
+    for (int i = 0; i < xHist.cols; i++){
+      if (xHist.at<double>(i) < limX){
+	local.col(i).setTo(0);
+      }
+    }
     list<TextLine> tls = findLines(local, false);
     score += verticalArrangement(local, tls);
   }
@@ -82,11 +96,10 @@ bool verticalArrangement(Mat& textTable, list<TextLine>& lines){
   reduce(textTable, hist, 0, CV_REDUCE_SUM, CV_64F);
   find_lines(hist, text, space);
   vector<TextLine> partitions = partitionBlocks(lines, space);
+  double med = 3;
   if (partitions.size() < 2)
     return false;
   for (int i = 0; i < partitions.size(); i++){
-    //    double med = binapprox<Rect, int>(partitions[i].elements, [](Rect r){return  r.width;});
-    double med = 3;
     double lv = welford<Rect, int>(partitions[i].elements, [](Rect r){return r.x;});
     double cv = welford<Rect, double>(partitions[i].elements, [](Rect r){return (r.x+r.br().x)*0.5;});
     double rv = welford<Rect, int>(partitions[i].elements, [](Rect r){return r.br().x;});    
@@ -119,12 +132,12 @@ bool manyRows(Mat& img){
   return text.size() > 1;
 }
 
-bool hasLargeGraphElement(Rect r, vector<ComponentStats> statsNontext){
-  double area = 0.05*r.area();
+bool hasLargeGraphElement(Rect r, vector<ComponentStats>& statsNontext){
+  double lim = 0.05*r.area();
   int areaSum = 0;
   for (ComponentStats& cs : statsNontext){
     areaSum += cs.bb_area;
-    if (areaSum > area)
+    if (areaSum > lim)
       return true;
   }
   return false;

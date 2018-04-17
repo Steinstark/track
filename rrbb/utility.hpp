@@ -42,10 +42,10 @@ void find_lines(const cv::Mat& hist, LineContainer& text, LineContainer& space, 
   int length = std::max(hist.rows, hist.cols);
   int t = 0;
   for (int i = 1; i < length; i++){
-    if (!(hist.at<double>(i-1) < lim) && hist.at<double>(i) >= lim){
+    if (hist.at<double>(i-1) <= lim && hist.at<double>(i) > lim){
       t = i;
     }
-    else if ((hist.at<double>(i-1) >= lim) && !(hist.at<double>(i) < lim)){
+    else if (hist.at<double>(i-1) > lim && hist.at<double>(i) <= lim){
       text.push_back(Line(t,i));
       t = -1;
     }

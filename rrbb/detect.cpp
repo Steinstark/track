@@ -8,10 +8,5 @@ using namespace cv;
 
 list<Rect> detect(Mat& text, Mat& nontext){
   list<Rect> tables = findRLT(text, nontext);
-  Mat textClone = text.clone();
-  for (Rect& r : tables){
-    textClone(r) = 0;
-    nontext(r) = 0;
-  }
   return tables;
 }

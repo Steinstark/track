@@ -1,17 +1,17 @@
 #include "rlt_detect.hpp"
 #include <list>
 #include <opencv2/opencv.hpp>
+#include <boost/geometry.hpp>
 #include "utility.hpp"
 #include "image_util.hpp"
-#include "tree_helper.hpp"
 #include "image_primitives.hpp"
 
 using namespace std;
 using namespace cv;
-using namespace tree;
+namespace bgi = boost::geometry::index;
 
 list<Rect> findRLT(Mat& text, Mat& nontext){
-  int vl = nontext.rows/19, hl = nontext.cols/19;
+  int vl = nontext.rows/31, hl = nontext.cols/31;
   Mat elementV = getStructuringElement(MORPH_RECT, Size(1, vl), Point(-1, -1));
   Mat elementH = getStructuringElement(MORPH_RECT, Size(hl, 1), Point(-1, -1));
   Mat vertical, horizontal;
@@ -19,32 +19,30 @@ list<Rect> findRLT(Mat& text, Mat& nontext){
   lineSep(nontext, horizontal, elementH);
   Mat intersect = vertical & horizontal;
   Mat lines = vertical | horizontal;
-  list<Rect> ib, nb;
+  list<Rect> ib;
   boundingVector(intersect, back_inserter(ib));
   Mat cc;
   vector<ComponentStats> stats = statistics(nontext, cc);
-  RTBox tree;
-  for (Rect& r : ib){
-    insert2tree(tree, r);
-  }
+  sort(stats.begin(), stats.end(), [](const ComponentStats& lh, const ComponentStats& rh){return lh.bb_area > rh.bb_area;});
+  bgi::rtree<Rect, bgi::quadratic<16> > tree(ib);
   list<Rect> tables;
+  bgi::rtree<Rect, bgi::quadratic<16> > tableTree;
   for (ComponentStats& cs : stats){
     Rect& r = cs.r;
     Mat textRegion = text(r);
+    Mat nontextRegion = nontext(r);
     Mat invertedLines;
     bitwise_not(lines(r), invertedLines);
-
-    Mat sob;
-    Sobel(invertedLines, sob, CV_64F, 1, 1, 1, 1, 0, BORDER_CONSTANT);
-
-    
-    if (search_tree(tree, r).size() >= 10 && verticalArrangement(invertedLines)){
-      Mat tmp(Size(r.width, r.height), CV_8UC1, Scalar(0));
-      Mat nontextRegion = nontext(r);
-      Mat mask = cc(r) == cs.index & lines(r);
-      bitwise_xor(nontextRegion, mask, tmp);
-      if (!hasLargeGraphElement(tmp)){
+    if (distance(tableTree.qbegin(bgi::intersects(r)), tableTree.qend()) == 0 &&
+	distance(tree.qbegin(bgi::intersects(r)), tree.qend()) >= 10 &&
+	verticalArrangement(invertedLines)){
+      Mat tmp;
+      bitwise_xor(nontextRegion, lines(r), tmp);
+      list<TextLine> tls = findLines(text);
+      if (!hasLargeGraphElement(tmp) ||
+	  verticalArrangement(text, tls)){
 	tables.push_back(r);
+	tableTree.insert(r);
       }
     }
   }

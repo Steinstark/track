@@ -46,7 +46,7 @@ list<Line> getParts(int rows, int partitions, vector<Line>& text){
       bound.push_back(Line(start, pr));
       start = pr;
       goal = start + (rows - start)/--partitions;
-      prevDist = goal - start;
+      prevDist = goal - l.r;
     }else {
       prevDist = dist;
       pr = l.r+1;

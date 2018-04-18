@@ -7,7 +7,6 @@
 #include <set>
 #include "util.hpp"
 #include "utility.hpp"
-#include "tree_helper.hpp"
 
 using namespace std;
 using namespace cv;
@@ -97,8 +96,6 @@ bool verticalArrangement(Mat& textTable, list<TextLine>& lines){
   find_lines(hist, text, space);
   vector<TextLine> partitions = partitionBlocks(lines, space);
   double med = 3;
-  if (partitions.size() < 2)
-    return false;
   for (int i = 0; i < partitions.size(); i++){
     double lv = welford<Rect, int>(partitions[i].elements, [](Rect r){return r.x;});
     double cv = welford<Rect, double>(partitions[i].elements, [](Rect r){return (r.x+r.br().x)*0.5;});
@@ -130,6 +127,16 @@ bool manyRows(Mat& img){
   vector<Line> text, space;
   find_lines(hist, text, space);
   return text.size() > 1;
+}
+
+bool isTableLike(const Mat& img){
+  Mat hist;
+  reduce(img, hist, 0, CV_REDUCE_SUM, CV_64F);
+  vector<Line> text, space;
+  find_lines(hist, text, space);
+  if (text.size() < 2 && (double)img.cols / img.rows < 0.3)
+      return false;
+  return true;
 }
 
 bool hasLargeGraphElement(Rect r, vector<ComponentStats>& statsNontext){

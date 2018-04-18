@@ -24,23 +24,21 @@ list<Rect> findRLT(Mat& text, Mat& nontext){
   Mat cc;
   vector<ComponentStats> stats = statistics(nontext, cc);
   sort(stats.begin(), stats.end(), [](const ComponentStats& lh, const ComponentStats& rh){return lh.bb_area > rh.bb_area;});
-  bgi::rtree<Rect, bgi::quadratic<16> > tree(ib);
+  list<Rect> textBound;
+  bgi::rtree<Rect, bgi::quadratic<16> > tree(ib), tableTree;
   list<Rect> tables;
-  bgi::rtree<Rect, bgi::quadratic<16> > tableTree;
   for (ComponentStats& cs : stats){
     Rect& r = cs.r;
-    Mat textRegion = text(r);
-    Mat nontextRegion = nontext(r);
-    Mat invertedLines;
+    Mat textRegion = text(r), nontextRegion = nontext(r), invertedLines;
     bitwise_not(lines(r), invertedLines);
     if (distance(tableTree.qbegin(bgi::intersects(r)), tableTree.qend()) == 0 &&
 	distance(tree.qbegin(bgi::intersects(r)), tree.qend()) >= 10 &&
-	verticalArrangement(invertedLines)){
+	verticalArrangement(invertedLines) &&
+	isTableLike(invertedLines)){
       Mat tmp;
       bitwise_xor(nontextRegion, lines(r), tmp);
       list<TextLine> tls = findLines(text);
-      if (!hasLargeGraphElement(tmp) ||
-	  verticalArrangement(text, tls)){
+      if (!hasLargeGraphElement(tmp)){
 	tables.push_back(r);
 	tableTree.insert(r);
       }

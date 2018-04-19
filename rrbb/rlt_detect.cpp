@@ -11,7 +11,7 @@ using namespace cv;
 namespace bgi = boost::geometry::index;
 
 list<Rect> findRLT(Mat& text, Mat& nontext){
-  int vl = nontext.rows/31, hl = nontext.cols/31;
+  int vl = nontext.rows/57, hl = nontext.cols/57;
   Mat elementV = getStructuringElement(MORPH_RECT, Size(1, vl), Point(-1, -1));
   Mat elementH = getStructuringElement(MORPH_RECT, Size(hl, 1), Point(-1, -1));
   Mat vertical, horizontal;
@@ -32,13 +32,14 @@ list<Rect> findRLT(Mat& text, Mat& nontext){
     Mat textRegion = text(r), nontextRegion = nontext(r), invertedLines;
     bitwise_not(lines(r), invertedLines);
     if (distance(tableTree.qbegin(bgi::intersects(r)), tableTree.qend()) == 0 &&
-	distance(tree.qbegin(bgi::intersects(r)), tree.qend()) >= 10 &&
-	verticalArrangement(invertedLines) &&
-	isTableLike(invertedLines)){
+	distance(tree.qbegin(bgi::intersects(r)), tree.qend()) >= 10){
       Mat tmp;
       bitwise_xor(nontextRegion, lines(r), tmp);
       list<TextLine> tls = findLines(text);
-      if (!hasLargeGraphElement(tmp)){
+      if (!hasLargeGraphElement(tmp) &&
+	  isTableLike(invertedLines) &&
+	  !hasOnewayLines(horizontal(r), vertical(r)) &&
+	  verticalArrangement(invertedLines)){
 	tables.push_back(r);
 	tableTree.insert(r);
       }

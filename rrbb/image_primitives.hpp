@@ -7,7 +7,8 @@
 
 bool isLine(const ComponentStats& cs);
 bool hasLargeGraphElement(const cv::Mat nontext);
-bool isTableLike(const cv::Mat& img);
+bool isTableLike(const cv::Mat& inverted);
+bool hasOnewayLines(const cv::Mat horizontal, const cv::Mat vertical);
 bool hasLowDensity(ComponentStats& cs);
 bool mostlyText(const cv::Mat& nontext);
 bool verifyReg(cv::Mat& text, cv::Mat& nontext, int count);

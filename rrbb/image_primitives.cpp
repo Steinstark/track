@@ -5,12 +5,15 @@
 #include <functional>
 #include <type_traits>
 #include <set>
+#include <map>
+#include <boost/geometry.hpp>
 #include "util.hpp"
 #include "utility.hpp"
 
 using namespace std;
 using namespace cv;
 using namespace tree;
+namespace bgi = boost::geometry::index;
 
 bool isLine(const ComponentStats& cs){
   return cs.hwratio < 0.10;  
@@ -57,7 +60,7 @@ list<Line> getParts(int rows, int partitions, vector<Line>& text){
 }
 
 bool verticalArrangement(Mat& text){
-  int score = 0;
+  int score = 0, rows = 0;
   Mat yHist, tmp;
   int limY = text.cols*255*0.1;
   reduce(text, yHist, 1, CV_REDUCE_SUM, CV_64F);  
@@ -72,7 +75,8 @@ bool verticalArrangement(Mat& text){
   if (partitions <= 1){
     return 0;
   }
-  list<Line> parts = getParts(text.rows, partitions, textLine);  
+  list<Line> parts = getParts(text.rows, partitions, textLine);
+  map<int, int> freqTable;
   for (Line& part : parts){
     Rect r(0, part.l ,text.cols, part.length());
     Mat local = text(r), xHist;
@@ -84,9 +88,13 @@ bool verticalArrangement(Mat& text){
       }
     }
     list<TextLine> tls = findLines(local, false);
+    for (TextLine& tl : tls){
+      freqTable[tl.elements.size()]++;
+    }
+    rows += tls.size();
     score += verticalArrangement(local, tls);
-  }
-  return score > partitions/2;
+  }  
+  return (score > partitions/2 && freqTable.size() <= 4);
 }
 
 bool verticalArrangement(Mat& textTable, list<TextLine>& lines){
@@ -129,20 +137,37 @@ bool manyRows(Mat& img){
   return text.size() > 1;
 }
 
-bool isTableLike(const Mat& img){
+bool isTableLike(const Mat& inverted){
   Mat hist;
-  reduce(img, hist, 0, CV_REDUCE_SUM, CV_64F);
+  reduce(inverted, hist, 0, CV_REDUCE_SUM, CV_64F);
   vector<Line> text, space;
   find_lines(hist, text, space);
-  if (text.size() < 2 && (double)img.cols / img.rows < 0.3)
+  if (text.size() < 2 && (double)inverted.cols / inverted.rows < 0.3)
       return false;
   return true;
+}
+
+bool hasOnewayLines(const Mat horizontal, const Mat vertical){
+  vector<ComponentStats> hStats = statistics(horizontal);
+  vector<ComponentStats> vStats = statistics(vertical);
+  bgi::rtree<ComponentStats, bgi::quadratic<16> > hTree(hStats);
+  int count = 0;
+  for (ComponentStats& cs : vStats){
+    if (distance(hTree.qbegin(bgi::intersects(cs)), hTree.qend()) < 2){
+      count++;
+    }
+  }
+  if (count > vStats.size()*0.2)
+    return true;
+  return false;
 }
 
 bool hasLargeGraphElement(Rect r, vector<ComponentStats>& statsNontext){
   double lim = 0.05*r.area();
   int areaSum = 0;
   for (ComponentStats& cs : statsNontext){
+    if (cs.hwratio < 0.06)
+      areaSum += 0.025*r.area();
     areaSum += cs.bb_area;
     if (areaSum > lim)
       return true;

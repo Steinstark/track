@@ -35,9 +35,10 @@ list<Rect> findRLT(Mat& text, Mat& nontext){
 	distance(tree.qbegin(bgi::intersects(r)), tree.qend()) >= 10){
       Mat tmp;
       bitwise_xor(nontextRegion, lines(r), tmp);
-      list<TextLine> tls = findLines(text);
+      list<TextLine> tls = findLines(text);      
       if (!hasLargeGraphElement(tmp) &&
 	  isTableLike(invertedLines) &&
+	  lowCrapRatio(textRegion, tmp) &&
 	  !hasOnewayLines(horizontal(r), vertical(r)) &&
 	  verticalArrangement(invertedLines)){
 	tables.push_back(r);

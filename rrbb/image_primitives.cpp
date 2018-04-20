@@ -94,7 +94,7 @@ bool verticalArrangement(Mat& text){
     rows += tls.size();
     score += verticalArrangement(local, tls);
   }  
-  return (score > partitions/2 && freqTable.size() <= 4);
+  return (score >= partitions/2 && freqTable.size() <= 4);
 }
 
 bool verticalArrangement(Mat& textTable, list<TextLine>& lines){

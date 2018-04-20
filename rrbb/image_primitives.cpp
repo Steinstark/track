@@ -186,7 +186,7 @@ bool hasLargeGraphElement(const Mat nontext){
   return hasLargeGraphElement(Rect(0, 0, nontext.cols, nontext.rows), stats);
 }
 
-bool verifyReg(Mat& text, Mat& nontext, int count){
+bool verifyReg(Mat& text, Mat& nontext){
   vector<ComponentStats> statsText = statistics(text);
   RT tree;
   Rect r(0,0, text.cols, text.rows);
@@ -197,11 +197,9 @@ bool verifyReg(Mat& text, Mat& nontext, int count){
   bitwise_not(mask, withoutLines, nontext);
   vector<ComponentStats> statsNontext = statistics(withoutLines);
   vector<ComponentStats> statsComplete = statistics(nontext);
-  bool notInside = count == statsComplete.size();
   bool isTable=  verticalArrangement(text) &&
     mostlyText(statsNontext) &&
     manyRows(text) &&
-    !hasLargeGraphElement(r, statsNontext) &&
-    notInside;
+    !hasLargeGraphElement(r, statsNontext);
   return isTable;
 }

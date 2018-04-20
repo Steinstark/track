@@ -36,26 +36,6 @@ void expandLine(Mat& unexpanded){
   unexpanded(box) = Scalar(255);
 }
 
-list<Rect> findKernels(Mat& localText){
-  list<Rect> regions = homogenous_recursive(localText);  
-
-  //DEBUG
-  Mat mask(localText.size(), CV_8UC1, Scalar(0));
-  for (Rect& r : regions){
-    rectangle(mask, r, Scalar(255));
-  }
-  Mat overlay = mask + localText;
-  
-  list<Rect> kernels;
-  for (Rect region : regions){
-    Mat localRegion = localText(region);
-    if (verticalArrangement(localRegion)){      
-      kernels.push_back(region);
-    }
-  }
-  return kernels;
-}
-
 int distance(const Rect& a, const Rect& b){
   int dist1 = abs(a.y-b.br().y);
   int dist2 = abs(a.br().y-b.y);
@@ -138,29 +118,27 @@ list<Rect> expandKernels(const Mat& text, const Mat& expandedLine, const list<Re
   return expandedKernels;
 }
 
-list<Rect> findNRLT(Mat& text, Mat& nontext, ImageMeta& im){
-  Mat localText = text.clone();  
-  list<TextLine> tls = findLines(text);
-  for (TextLine tl : tls){
-    rectangle(localText, tl.getBox(), Scalar(255), CV_FILLED);
+list<Rect> findNRLT(Mat& text, Mat& nontext){  
+  list<Rect> kernels = homogenous_recursive(text);
+  list<TextLine> tls =  findLines(text);
+  Mat lines(text.size(), CV_8UC1, Scalar(0));
+  for (TextLine& tl : tls){
+    rectangle(lines, tl.getBox(), Scalar(255), CV_FILLED);
   }
-  Mat expandedLine = localText.clone();
-  expandLine(expandedLine);
-
-  //DEBUG
-  expandedDebug = expandedLine;
-  textDebug = text;
-  lineDebug = localText;
-  
-  list<Rect> kernels = findKernels(localText);
-  list<Rect> expandedKernels = expandKernels(localText, expandedLine, kernels);
+  list<Rect> tables;
+  for (Rect& kernel : kernels){
+    Mat textRegion = text(kernel);
+    tables.push_back(kernel);
+  }
+  /*
+  list<Rect> expandedKernels = expandKernels(text, expandedLine, kernels);
   list<Rect> nrlTables;  
   for (Rect& expanded : expandedKernels){    
-    Mat regionText = localText(expanded);
+    Mat regionText = text(expanded);
     Mat regionNontext = nontext(expanded);
-    if (verifyReg(regionText, regionNontext, search_tree(im.nt_tree, expanded).size())){
+    if (verifyReg(regionText, regionNontext)){
       nrlTables.push_back(expanded);
     }
-  }
-  return nrlTables;
+    }*/
+    return tables;
 }

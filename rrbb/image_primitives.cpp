@@ -162,6 +162,12 @@ bool hasOnewayLines(const Mat horizontal, const Mat vertical){
   return false;
 }
 
+bool lowCrapRatio(const Mat text, const Mat nontext){
+  vector<ComponentStats> textStats = statistics(text);
+  vector<ComponentStats> nontextStats = statistics(nontext);
+  return textStats.size() > nontextStats.size();
+}
+
 bool hasLargeGraphElement(Rect r, vector<ComponentStats>& statsNontext){
   double lim = 0.05*r.area();
   int areaSum = 0;

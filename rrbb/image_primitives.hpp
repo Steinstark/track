@@ -6,6 +6,7 @@
 #include "utility.hpp"
 
 bool isLine(const ComponentStats& cs);
+bool lowCrapRatio(const cv::Mat text, const cv::Mat nontext);
 bool hasLargeGraphElement(const cv::Mat nontext);
 bool isTableLike(const cv::Mat& inverted);
 bool hasOnewayLines(const cv::Mat horizontal, const cv::Mat vertical);

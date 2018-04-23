@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <functional>
 #include <opencv2/opencv.hpp>
+#include <utility>
 #include "homogenous_regions.hpp"
 #include "utility.hpp"
 #include "image_primitives.hpp"
@@ -120,13 +121,28 @@ list<Rect> expandKernels(const Mat& text, const Mat& expandedLine, const list<Re
 
 list<Rect> findNRLT(Mat& text, Mat& nontext){  
   list<Rect> kernels = homogenous_recursive(text);
-  list<TextLine> tls =  findLines(text);
+  for (Rect& kernel : kernels){
+    Mat local = text(kernel);
+    list<TextLine> tls findLines(local);
+    map<int, int> colnumToCount;
+    int cols, num = 0;
+    for (TextLine& tl : tls){
+      int val = ++columnToCount[tl.elements.size()];
+      if (val > num){
+	num = val;
+	cols = tl.elements.size();
+      }
+    }
+    
+  }
+  //DEBUG
   Mat lines(text.size(), CV_8UC1, Scalar(0));
   for (TextLine& tl : tls){
-    rectangle(lines, tl.getBox(), Scalar(255), CV_FILLED);
+    for (Rect r : tl.elements)
+    rectangle(lines, r, Scalar(255), CV_FILLED);
   }
   list<Rect> tables;
-  for (Rect& kernel : kernels){
+  for (Rect& kernel : expanded){
     Mat textRegion = text(kernel);
     tables.push_back(kernel);
   }
@@ -137,8 +153,8 @@ list<Rect> findNRLT(Mat& text, Mat& nontext){
     Mat regionText = text(expanded);
     Mat regionNontext = nontext(expanded);
     if (verifyReg(regionText, regionNontext)){
-      nrlTables.push_back(expanded);
-    }
+    nrlTables.push_back(expanded);
+      }
     }*/
-    return tables;
+  return tables;
 }

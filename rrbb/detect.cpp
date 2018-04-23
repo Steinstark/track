@@ -8,7 +8,7 @@ using namespace std;
 using namespace cv;
 
 list<Rect> detect(Mat& text, Mat& nontext){
-  // list<Rect> tables = findRLT(text, nontext);
+  //list<Rect> tables = findRLT(text, nontext);
   list<Rect> tables = findNRLT(text, nontext);
   return tables;
 }

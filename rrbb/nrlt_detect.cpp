@@ -121,10 +121,13 @@ list<Rect> expandKernels(const Mat& text, const Mat& expandedLine, const list<Re
 
 list<Rect> findNRLT(Mat& text, Mat& nontext){  
   list<Rect> kernels = homogenous_recursive(text);
+  int prevCols = 0;
+  list<Rect> expanded;
+  expanded.push_back(Rect());
   for (Rect& kernel : kernels){
     Mat local = text(kernel);
-    list<TextLine> tls findLines(local);
-    map<int, int> colnumToCount;
+    list<TextLine> tls = findLines(local);
+    map<int, int> columnToCount;
     int cols, num = 0;
     for (TextLine& tl : tls){
       int val = ++columnToCount[tl.elements.size()];
@@ -133,13 +136,12 @@ list<Rect> findNRLT(Mat& text, Mat& nontext){
 	cols = tl.elements.size();
       }
     }
-    
-  }
-  //DEBUG
-  Mat lines(text.size(), CV_8UC1, Scalar(0));
-  for (TextLine& tl : tls){
-    for (Rect r : tl.elements)
-    rectangle(lines, r, Scalar(255), CV_FILLED);
+    if (cols == prevCols){
+      expanded.back() |= kernel;
+    }else{
+      expanded.push_back(kernel);
+    }
+    prevCols = cols;
   }
   list<Rect> tables;
   for (Rect& kernel : expanded){

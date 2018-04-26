@@ -134,10 +134,8 @@ set<int> getHeaderIndex(map<int, IndexPair>& grid, vector<Rect>& bb){
 
   for (auto p : grid){
     cols[p.second.first].update(p.second.second, bb[p.first].width, p.first);
-    //rows[p.second.second].update(p.second.first, bb[p.first].height, p.first);
   }
   set<int> headerIndex = findHeaders(cols);
-  //findHeaders(rows, headerIndex);
   return headerIndex;
 }
 

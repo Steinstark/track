@@ -77,7 +77,6 @@ double welford(Iter first, Iter last, NumberFunction f, double& mean){
   return sqrt(m2/(size-1));
 }
 
-
 template <typename Type, typename Number>
 double binapprox(const std::vector<Type>& x, std::function<Number(Type)> f){
   // Compute the mean and standard deviation
@@ -88,13 +87,11 @@ double binapprox(const std::vector<Type>& x, std::function<Number(Type)> f){
     sum += f(x[i]);
   }
   double mu = sum/n;
-
   sum = 0;
   for (i = 0; i < n; i++) {
     sum += (f(x[i])-mu)*(f(x[i])-mu);
   }
   double sigma = sqrt(sum/n);
-
   // Bin x across the interval [mu-sigma, mu+sigma]
   int bottomcount = 0;
   int bincounts[1001];
@@ -105,7 +102,6 @@ double binapprox(const std::vector<Type>& x, std::function<Number(Type)> f){
   double leftend =  mu-sigma;
   double rightend = mu+sigma;
   int bin;
-
   for (i = 0; i < n; i++) {
     if (f(x[i]) < leftend) {
       bottomcount++;
@@ -115,7 +111,6 @@ double binapprox(const std::vector<Type>& x, std::function<Number(Type)> f){
       bincounts[bin]++;
     }
   }
-
   // If n is odd
   if (n & 1) {
     // Find the bin that contains the median
@@ -129,17 +124,14 @@ double binapprox(const std::vector<Type>& x, std::function<Number(Type)> f){
         return (i+0.5)/scalefactor + leftend;
       }
     }
-  }
-  
+  }  
   // If n is even
   else {
     // Find the bins that contains the medians
     int k = n/2;
-    int count = bottomcount;
-    
+    int count = bottomcount;    
     for (i = 0; i < 1001; i++) {
-      count += bincounts[i];
-      
+      count += bincounts[i];      
       if (count >= k) {
         int j = i;
         while (count == k) {

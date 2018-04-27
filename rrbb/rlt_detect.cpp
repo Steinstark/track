@@ -32,7 +32,7 @@ list<Rect> findRLT(Mat& text, Mat& nontext){
     Mat textRegion = text(r), nontextRegion = nontext(r), invertedLines;
     bitwise_not(lines(r), invertedLines);
     erode(invertedLines, invertedLines, getStructuringElement(MORPH_RECT, Size(1, 5), Point(-1, -1)));
-    if (distance(tableTree.qbegin(bgi::intersects(r)), tableTree.qend()) == 0 &&
+    if (tableTree.qbegin(bgi::intersects(r)) == tableTree.qend() &&
 	distance(tree.qbegin(bgi::intersects(r)), tree.qend()) >= 10){
       Mat tmp;
       bitwise_xor(nontextRegion, lines(r), tmp);

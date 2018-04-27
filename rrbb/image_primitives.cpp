@@ -151,13 +151,21 @@ bool hasOnewayLines(const Mat horizontal, const Mat vertical){
   vector<ComponentStats> hStats = statistics(horizontal);
   vector<ComponentStats> vStats = statistics(vertical);
   bgi::rtree<ComponentStats, bgi::quadratic<16> > hTree(hStats);
-  int count = 0;
+  int countV = 0;
   for (ComponentStats& cs : vStats){
     if (distance(hTree.qbegin(bgi::intersects(cs)), hTree.qend()) < 2){
-      count++;
+      countV++;
     }
   }
-  if (count > vStats.size()*0.2)
+  bgi::rtree<ComponentStats, bgi::quadratic<16> > vTree(vStats);
+  int lim = horizontal.cols * 0.1;
+  int countH = 0;
+  for (ComponentStats& cs : hStats){
+    if (cs.r.width > lim && distance(vTree.qbegin(bgi::intersects(cs)), vTree.qend()) < 2){
+      countH++;
+    }        
+  }
+  if (countV > vStats.size()*0.2 || countH > hStats.size()*0.2)
     return true;
   return false;
 }

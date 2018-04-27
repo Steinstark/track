@@ -37,7 +37,8 @@ void TextLine::addSegment(Rect segment){
 
 bool isSegment(const Rect& a, const Rect& b){
   if (a != Rect() && b != Rect())
-    return min(abs(a.x-b.br().x), abs(a.br().x-b.x)) <= max(a.height, b.height);
+    return min(abs(a.x-b.br().x), abs(a.br().x-b.x)) <= max(a.height, b.height) ||
+      (a.x <= b.br().x && b.x <= a.br().x);
   return true;
 }
 

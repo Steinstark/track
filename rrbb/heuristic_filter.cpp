@@ -17,8 +17,7 @@ void heuristic_filter(Mat& text, Mat& nontext){
   for (ComponentStats& cs : stats){
     if (cs.area < 6)
       bitwise_not(text, text, cc == cs.index);
-    else if ((cs.hwratio < 0.15 && cs.r.width > cs.r.height) ||
-	cs.density < 0.25 ||
+    else if (cs.density < 0.25 ||
 	distance(tree.qbegin(bgi::intersects(cs)), tree.qend()) > 4){
       move2(text, nontext, cc, cs.index);
     }

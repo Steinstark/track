@@ -6,11 +6,12 @@
 #include "mla.hpp"
 #include "mlc.hpp"
 #include "image_util.hpp"
+#include "detect.hpp"
 
 using namespace std;
 using namespace cv;
 
-const string outpath("/home/stein/Documents/th/Figures/");
+string outpath;
 
 void grayPlot(const Mat& img){
   imwrite(outpath + "gray.png", img);	  
@@ -25,7 +26,7 @@ void heuristicPlot(const Mat& text, const Mat& nontext){
   imwrite(outpath + "heuristic_nontext.png", nontext);
 }
 
-void homogenousPlot(const Mat& img, const list<Rect> regions){
+void homogenousPlot(const Mat& img, const list<Rect>& regions){
   Mat local = img.clone();
   for (const Rect& r : regions){
     rectangle(local, r, Scalar(255));
@@ -43,8 +44,17 @@ void classificationPlot(const Mat& text, const Mat& nontext){
   imwrite(outpath + "classification_nontext.png", nontext);
 }
 
+void tablePlot(const Mat& img, const list<Rect>& regions){
+  Mat local = img.clone();
+  for (const Rect& r : regions){
+    rectangle(local, r, Scalar(255,0,0), 5);
+  }
+  imwrite(outpath + "tables.png", local);
+}
+
 int main(int argc, char** argv){
   string file(argv[1]);
+  outpath = string(argv[2]);
   Mat img = imread(file.c_str());
   Mat gray;
   cvtColor(img, gray, COLOR_BGR2GRAY);
@@ -60,5 +70,7 @@ int main(int argc, char** argv){
   analysisPlot(text, nontext);
   multi_level_classification(text, nontext);
   classificationPlot(text, nontext);
+  list<Rect> tables = detect(text, nontext);
+  tablePlot(img, tables);  
   return 0;
 }

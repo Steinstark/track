@@ -16,27 +16,22 @@ using namespace std;
 using namespace cv;
 using namespace Magick;
 
-Mat pdf2mat(string pdf){
-  InitializeMagick(NULL);  
-  Image image(pdf);
-  int w = image.columns();
-  int h = image.rows();
-  Mat opencvImage(h,w,CV_8UC3);
-  image.write(0 ,0 ,w ,h, "BGR", Magick::CharPixel, opencvImage.data);
-  return opencvImage;
+void usage(){
+  cout << "Usage: track IMAGE" << endl;
+  cout << "Detect tables in IMAGE" << endl;
 }
 
 int main(int argc, char** argv){
   if (argc != 2){
-    cout << "Invalid number of arguments" << endl;
+    usage();
     return 0;
   }
   string file(argv[1]);
-  Mat img;
-  if (fileHasType(file, "pdf"))
-    img = pdf2mat(file);
-  else
-    img = imread(file.c_str());
+  Mat img = imread(file.c_str());
+  if (!img.data){
+    cout << "Could not open or find image " << file << endl;
+    return 1;
+  }
   Mat bw = color2binary(img);
   list<Rect> tables = detect_tables(bw);
   for (Rect& table : tables){

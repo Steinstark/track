@@ -10,6 +10,7 @@
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/identity.hpp>
 #include <boost/multi_index/member.hpp>
+#include <boost/multi_index/ranked_index.hpp>
 #include <boost/multi_index/global_fun.hpp>
 #include "util.hpp"
 #include "utility.hpp"
@@ -34,13 +35,18 @@ int heightExtractor(const ComponentStats& cs){
   return cs.r.height;
 }
 
+struct Area{};
+struct Width{};
+struct Height{};
+struct Index{};
+
 using NodeDB = multi_index_container<
   ComponentStats,
   indexed_by<
-    ordered_non_unique<member<ComponentStats, int, &ComponentStats::area>, greater<int> >,
-    ordered_non_unique<global_fun<const ComponentStats&, int, &widthExtractor>, greater<int> >,
-    ordered_non_unique<global_fun<const ComponentStats&, int, &heightExtractor>, greater<int> >,
-    ordered_unique<member<ComponentStats, int, &ComponentStats::index> >
+    ranked_non_unique<tag<Area>, member<ComponentStats, int, &ComponentStats::area>, greater<int> >,
+    ranked_non_unique<tag<Width>, global_fun<const ComponentStats&, int, &widthExtractor>, greater<int> >,
+    ranked_non_unique<tag<Height>, global_fun<const ComponentStats&, int, &heightExtractor>, greater<int> >,
+    ordered_unique<tag<Index>, member<ComponentStats, int, &ComponentStats::index> >
     >
   >;
 
@@ -55,25 +61,15 @@ vector<double> k_calc(const vector<double>& means, const vector<double>& medians
 //Technically not median for even length, but doesnt really matter
 vector<double> getMedians(NodeDB& nodes){
   vector<double> median(3,0);
-  auto& av = nodes.get<0>();
-  auto& wv = nodes.get<1>();
-  auto& hv = nodes.get<2>();
-  size_t n = nodes.size();
-  int a = n/2;
-  auto ita = av.begin();
-  auto itw = wv.begin();
-  auto ith = hv.begin();
-  advance(ita,a);
-  advance(itw,a);
-  advance(ith,a);
-  median[0] += ita->area;
-  median[1] += itw->r.width;
-  median[2] += ith->r.height;
+  int mid = nodes.size()*1/2;
+  median[0] = nodes.get<Area>().nth(mid)->r.area();
+  median[1] = nodes.get<Width>().nth(mid)->r.width;
+  median[2] = nodes.get<Height>().nth(mid)->r.height;
   return median;
 }
 
 vector<double> getMeans(NodeDB& nodes){
-  auto& iv = nodes.get<3>();
+  auto& iv = nodes.get<Index>();
   vector<double> mean(3,0);
   auto it = iv.begin();
   for (auto it = iv.begin(); it != iv.end(); ++it){
@@ -102,7 +98,7 @@ double minDist(bgi::rtree<ComponentStats, bgi::quadratic<16> >& tree, const Rect
   return 0;
 }
 
-list<int> classifyAll(const NodeDB& nodes, const list<int>& suspects){
+list<int> classifyAll(const NodeDB& nodes, const set<int>& suspects){
   bgi::rtree<ComponentStats, bgi::quadratic<16> > tree(nodes);
   double mean = 0;
   double var = welford(nodes.begin(),
@@ -111,7 +107,7 @@ list<int> classifyAll(const NodeDB& nodes, const list<int>& suspects){
 		       mean);
   list<int> confirmed;
   for (int e : suspects){
-    Rect r = nodes.get<3>().find(e)->r;
+    Rect r = nodes.get<Index>().find(e)->r;
     double dist = sqrt(minDist(tree, r));
     if (dist > 2*var && dist > 4*mean){
       confirmed.push_back(e);
@@ -124,55 +120,46 @@ bool median_filter(Rect& r, function<bool(int, int)> f){
   return f(r.area(), 0) && (f(r.width, 1) || f(r.height, 2));
 }
 
-void maximum_median_filter(NodeDB& nodes, DataBox& box, list<int>& suspects){  
-  auto& as = nodes.get<0>();
-  auto& ws = nodes.get<1>();
-  auto& hs = nodes.get<2>();  
-  while (nodes.size()){
-    auto ai = as.begin();
-    Rect r = ai->r;
-    if (!median_filter(r, [&box](int l, int i){return l > box.medians[i]*box.k[i];})){
-      break;
-    }
-    suspects.push_back(ai->index);
-    as.erase(ai);
-  }
+bool max_median(Rect& r, DataBox& box){
+  return median_filter(r, [&box](int l, int i){return l > box.medians[i]*box.k[i];});
 }
 
-void minimum_median_filter(NodeDB& nodes, DataBox& box, list<int>& suspects){
-  auto& as = nodes.get<0>();
-  auto& ws = nodes.get<1>();
-  auto& hs = nodes.get<2>();
-  auto ai = as.rbegin();
-  while (ai != as.rend()){
-    Rect r = ai->r;
-    if (!median_filter(r, [&box](int l, int i){return l < box.medians[i]/box.k[i];})){
+bool min_median(Rect& r, DataBox& box){
+  return median_filter(r, [&box](int l, int i){return l < box.medians[i]/box.k[i];});
+}
+
+template <typename Iterator, typename Fun>
+void general_filter(Iterator first, Iterator last, set<int>& suspects, Fun filter){
+  while (first != last){
+    if (!filter(first->r)){
       break;
     }
-    suspects.push_back(ai->index);
-    auto tmp1 = ai.base();
-    auto tmp2 = --tmp1;
-    ai = NodeDB::reverse_iterator{nodes.erase(tmp2)};
+    suspects.insert(first++->index);
   }
 }
 
 list<int> nontextElements(NodeDB& nodes){
   DataBox box(nodes);
-  list<int> suspects;
-  NodeDB local = nodes;
-  minimum_median_filter(local, box, suspects);
-  maximum_median_filter(local, box, suspects);  
+  set<int> suspects;
+  general_filter(nodes.get<Area>().begin(),
+                 nodes.get<Area>().end(),
+                 suspects,
+                 [&box](Rect r){return max_median(r, box);});
+  general_filter(nodes.get<Area>().rbegin(),
+                 nodes.get<Area>().rend(),
+                 suspects,
+                 [&box](Rect r){return min_median(r, box);});
   return classifyAll(nodes, suspects);
 }
 
 bool recursive_filter(Mat& text, Mat& nontext){
   NodeDB nodes;
-  
+  Mat local;
+  dilate(text, local, Mat());
   //DEBUG
-  textDebug = text;
-  nontextDebug = nontext;
+  textDebug = local;
   Mat cc;
-  statistics(text, cc, inserter(nodes, nodes.begin()));
+  statistics(local, cc, inserter(nodes, nodes.begin()));
   if (nodes.empty())
     return false;
   int count = nodes.size();

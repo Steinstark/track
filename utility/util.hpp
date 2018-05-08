@@ -144,6 +144,4 @@ double binapprox(const std::vector<Type>& x, std::function<Number(Type)> f){
   } 
 }
 
-double gaussWeight(double x, double mean, double var);
-
 #endif

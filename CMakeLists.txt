@@ -9,7 +9,7 @@ set(CMAKE_CXX_FLAGS "-g")
 
 find_package( PkgConfig REQUIRED)
 find_package( OpenCV REQUIRED )
-find_package( Boost COMPONENTS filesystem REQUIRED )
+find_package( Boost COMPONENTS system filesystem REQUIRED )
 pkg_check_modules(MAGICK REQUIRED Magick++)
 pkg_check_modules(LEPT REQUIRED lept)
 
@@ -42,7 +42,9 @@ target_link_libraries(track
   ${LEPT_LIBRARIES}
   tesseract
   ${OpenCV_LIBS}
-  ${MAGICK_LIBRARIES})
+  ${MAGICK_LIBRARIES}
+  ${Boost_SYSTEM_LIBRARY}     
+  ${Boost_FILESYSTEM_LIBRARY})
 add_executable(imagegen ${PROJECT_SOURCE_DIR}/imagegen.cpp)
 target_link_libraries(imagegen
   util

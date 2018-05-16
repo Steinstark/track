@@ -1,8 +1,8 @@
 #include <string>
 #include <list>
 #include <opencv2/opencv.hpp>
-#include <iostream>
 
+#include <iostream>
 #include "detect_table.hpp"
 #include "detect_cell.hpp"
 #include "textbox_ocr.hpp"

@@ -8,7 +8,7 @@ set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(CMAKE_CXX_FLAGS "-g")
 
 find_package( PkgConfig REQUIRED)
-find_package( OpenCV REQUIRED )
+find_package( OpenCV 3 REQUIRED )
 find_package( Boost COMPONENTS system filesystem REQUIRED )
 pkg_check_modules(MAGICK REQUIRED Magick++)
 pkg_check_modules(LEPT REQUIRED lept)
